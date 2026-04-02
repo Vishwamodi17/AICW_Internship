@@ -1,0 +1,109 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Register – LoanPredict AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-card {
+    max-width: 480px;
+    margin: 60px auto;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+  .auth-title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    background: linear-gradient(90deg,#00d4ff,#7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap .bi {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #666; font-size: 1rem; pointer-events: none;
+  }
+  .input-icon-wrap input { padding-left: 2.4rem !important; }
+  .divider { border-color: rgba(255,255,255,.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <i class="bi bi-person-plus-fill" style="font-size:2.5rem;color:#00d4ff;"></i>
+      <div class="auth-title mt-2">Create Account</div>
+      <p class="text-muted small">Join LoanPredict AI and check your loan eligibility</p>
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-danger py-2 small">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-person"></i>
+          <input type="text" name="username" class="form-control"
+                 placeholder="Choose a username" value="{{ form.username.value|default:'' }}" required />
+        </div>
+        {% if form.username.errors %}
+          <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-envelope"></i>
+          <input type="email" name="email" class="form-control"
+                 placeholder="your@email.com" value="{{ form.email.value|default:'' }}" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-lock"></i>
+          <input type="password" name="password1" class="form-control"
+                 placeholder="Create a strong password" required />
+        </div>
+        {% if form.password1.errors %}
+          <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Confirm Password</label>
+        <div class="input-icon-wrap">
+          <i class="bi bi-lock-fill"></i>
+          <input type="password" name="password2" class="form-control"
+                 placeholder="Repeat your password" required />
+        </div>
+        {% if form.password2.errors %}
+          <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-predict w-100">
+        <i class="bi bi-person-check-fill me-2"></i>Register
+      </button>
+    </form>
+
+    <hr class="divider my-4" />
+    <p class="text-center text-muted small mb-0">
+      Already have an account?
+      <a href="{% url 'login' %}" style="color:#00d4ff;">Sign in here</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

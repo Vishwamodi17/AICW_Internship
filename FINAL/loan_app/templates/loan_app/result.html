@@ -1,0 +1,378 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Loan Result – {{ result }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Result card ─────────────────────────────────────── */
+  .result-card {
+    border-radius: 24px; padding: 3rem 2rem;
+    text-align: center;
+    animation: popIn .6s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes popIn {
+    0%   { transform: scale(.7); opacity: 0; }
+    100% { transform: scale(1);  opacity: 1; }
+  }
+  .result-approved {
+    background: linear-gradient(135deg,rgba(0,200,100,.15),rgba(0,200,100,.05));
+    border: 2px solid #00c864;
+    box-shadow: 0 0 40px rgba(0,200,100,.3);
+  }
+  .result-approved .result-icon  { color: #00c864; }
+  .result-approved .result-title { color: #00c864; }
+  .result-rejected {
+    background: linear-gradient(135deg,rgba(255,60,60,.15),rgba(255,60,60,.05));
+    border: 2px solid #ff3c3c;
+    box-shadow: 0 0 40px rgba(255,60,60,.3);
+  }
+  .result-rejected .result-icon  { color: #ff3c3c; }
+  .result-rejected .result-title { color: #ff3c3c; }
+
+  .result-icon  { font-size: 5rem; }
+  .result-title { font-size: 2.5rem; font-weight: 800; margin-top: .5rem; }
+  .result-subtitle { color: var(--hero-sub); font-size: 1rem; }
+
+  /* ── Applicant name banner ───────────────────────────── */
+  .applicant-banner {
+    font-size: 1.15rem; font-weight: 600;
+    color: var(--body-color); margin-top: 1rem;
+  }
+  .applicant-banner span {
+    background: linear-gradient(90deg,#00d4ff,#7b2ff7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-weight: 800;
+  }
+  [data-theme="light"] .applicant-banner span {
+    background: linear-gradient(90deg,#0284c7,#7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Probability bars ────────────────────────────────── */
+  .prob-bar-wrap { background: rgba(128,128,128,.15); border-radius: 50px; height: 12px; }
+  .prob-bar-fill { height: 12px; border-radius: 50px; transition: width 1.2s ease; }
+  .bar-green { background: linear-gradient(90deg,#00c864,#00ff99); }
+  .bar-red   { background: linear-gradient(90deg,#ff3c3c,#ff8c00); }
+
+  /* ── Reason cards ────────────────────────────────────── */
+  .reason-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--divider);
+    animation: fadeUp .4s ease both;
+  }
+  .reason-item:last-child { border-bottom: none; padding-bottom: 0; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .reason-icon-wrap {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .icon-positive { background: rgba(0,200,100,.15); color: #00c864; }
+  .icon-negative { background: rgba(255,60,60,.15);  color: #ff3c3c; }
+  .icon-neutral  { background: rgba(255,193,7,.12);  color: #ffc107; }
+
+  .reason-label {
+    font-size: .8rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted-color);
+  }
+  .reason-detail {
+    font-size: .92rem; color: var(--body-color);
+    margin: 2px 0 0; line-height: 1.5;
+  }
+  .impact-badge {
+    font-size: .68rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    letter-spacing: .5px; text-transform: uppercase;
+    margin-left: 6px; vertical-align: middle;
+  }
+  .impact-High   { background: rgba(255,60,60,.15);  color: #ff6b6b; }
+  .impact-Medium { background: rgba(255,193,7,.15);  color: #ffc107; }
+  .impact-Low    { background: rgba(100,200,100,.15);color: #00c864; }
+
+  /* ── Summary table ───────────────────────────────────── */
+  .summary-table td { padding: 7px 12px; font-size: .9rem; }
+  .summary-table td:first-child { color: var(--table-label); width: 50%; }
+  .summary-table td:last-child  { color: var(--table-value); font-weight: 500; }
+  .summary-table tr:not(:last-child) td { border-bottom: 1px solid var(--divider); }
+
+  /* ── Receipt card ────────────────────────────────────── */
+  .receipt-card {
+    border: 2px dashed var(--card-border);
+    border-radius: 20px; padding: 2rem; position: relative;
+  }
+  .receipt-stamp {
+    position: absolute; top: 20px; right: 20px;
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: .55rem; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase;
+    border: 3px solid; opacity: .85;
+  }
+  .stamp-approved { border-color: #00c864; color: #00c864; }
+  .stamp-rejected { border-color: #ff3c3c; color: #ff3c3c; }
+  .receipt-stamp i { font-size: 1.6rem; }
+  .receipt-row {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; font-size: .88rem;
+    border-bottom: 1px dotted var(--divider);
+  }
+  .receipt-row:last-child { border-bottom: none; }
+  .receipt-row .rk { color: var(--table-label); }
+  .receipt-row .rv { color: var(--table-value); font-weight: 600; }
+
+  /* ── Buttons ─────────────────────────────────────────── */
+  .btn-print {
+    background: transparent;
+    border: 2px solid var(--section-ttl);
+    border-radius: 50px; padding: 10px 32px;
+    font-size: 1rem; font-weight: 600;
+    color: var(--section-ttl); cursor: pointer;
+    transition: background .2s, color .2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-print:hover { background: var(--section-ttl); color: #fff; }
+
+  /* ── Print ───────────────────────────────────────────── */
+  @media print {
+    .no-print { display: none !important; }
+    .receipt-card { border: 2px dashed #999 !important; }
+    body { background: #fff !important; }
+    .result-card { box-shadow: none !important; }
+    .result-approved { border-color: #00c864 !important; }
+    .result-rejected { border-color: #ff3c3c !important; }
+    .result-approved .result-title { color: #00c864 !important; -webkit-text-fill-color: #00c864 !important; }
+    .result-rejected .result-title { color: #ff3c3c !important; -webkit-text-fill-color: #ff3c3c !important; }
+    .applicant-banner span { -webkit-text-fill-color: #0284c7 !important; }
+    .reason-item { break-inside: avoid; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="hero no-print">
+  <div class="container">
+    <h1>Prediction Result</h1>
+    <p>Here's what our AI model says about your loan application.</p>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7" id="receiptArea">
+
+        <!-- ── Main Result Card ─────────────────────────── -->
+        <div class="result-card glass-card
+          {% if result == 'Approved' %}result-approved{% else %}result-rejected{% endif %}">
+
+          {% if result == 'Approved' %}
+            <div class="result-icon"><i class="bi bi-patch-check-fill"></i></div>
+            <div class="result-title">Loan Approved!</div>
+          {% else %}
+            <div class="result-icon"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="result-title">Loan Rejected</div>
+          {% endif %}
+
+          <!-- Applicant name -->
+          <div class="applicant-banner">
+            Applicant: <span>{{ applicant_name }}</span>
+          </div>
+
+          <p class="result-subtitle mt-2">
+            {% if result == 'Approved' %}
+              Congratulations <strong>{{ applicant_name }}</strong>! Based on your profile,
+              your loan application is likely to be approved.
+            {% else %}
+              Sorry <strong>{{ applicant_name }}</strong>, your application does not meet
+              the current approval criteria. See tips below.
+            {% endif %}
+          </p>
+
+          <!-- Probability bars -->
+          <div class="mt-4 text-start px-2">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-success">Approval Probability</small>
+              <small class="text-success fw-bold">{{ approved_prob }}%</small>
+            </div>
+            <div class="prob-bar-wrap mb-3">
+              <div class="prob-bar-fill bar-green" style="width:0%" data-target="{{ approved_prob }}"></div>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <small class="text-danger">Rejection Probability</small>
+              <small class="text-danger fw-bold">{{ rejected_prob }}%</small>
+            </div>
+            <div class="prob-bar-wrap">
+              <div class="prob-bar-fill bar-red" style="width:0%" data-target="{{ rejected_prob }}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Why This Decision ───────────────────────── -->
+        <div class="glass-card mt-4">
+          <p class="section-title">
+            <i class="bi bi-search me-2"></i>
+            Why Your Loan Was {{ result }}
+          </p>
+          <p style="font-size:.88rem;color:var(--muted-color);margin-bottom:1rem;">
+            Based on your profile, here are the key factors that influenced this decision,
+            ranked by their impact on the model's prediction.
+          </p>
+
+          {% for r in reasons %}
+          <div class="reason-item" style="animation-delay:{{ forloop.counter0 }}00ms;">
+            <div class="reason-icon-wrap icon-{{ r.status }}">
+              <i class="bi {{ r.icon }}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="reason-label">
+                {{ r.label }}
+                <span class="impact-badge impact-{{ r.impact }}">{{ r.impact }} Impact</span>
+              </div>
+              <p class="reason-detail">{{ r.detail }}</p>
+            </div>
+            <div class="flex-shrink-0 pt-1">
+              {% if r.status == 'positive' %}
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              {% elif r.status == 'negative' %}
+                <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+              {% else %}
+                <i class="bi bi-dash-circle-fill text-warning fs-5"></i>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- ── Printable Receipt ────────────────────────── -->
+        <div class="glass-card receipt-card mt-4">
+
+          <!-- Stamp -->
+          <div class="receipt-stamp {% if result == 'Approved' %}stamp-approved{% else %}stamp-rejected{% endif %}">
+            <i class="bi {% if result == 'Approved' %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i>
+            {{ result }}
+          </div>
+
+          <p class="section-title"><i class="bi bi-receipt me-2"></i>Official Receipt</p>
+
+          <div class="receipt-row">
+            <span class="rk">Receipt ID</span>
+            <span class="rv" style="font-family:monospace;">{{ receipt_id }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Date &amp; Time</span>
+            <span class="rv">{{ receipt_date }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Applicant Name</span>
+            <span class="rv">{{ applicant_name }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Decision</span>
+            <span class="rv" style="color:{% if result == 'Approved' %}#00c864{% else %}#ff3c3c{% endif %};">
+              {{ result }}
+            </span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Approval Probability</span>
+            <span class="rv">{{ approved_prob }}%</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Loan Amount</span>
+            <span class="rv">₹{{ form_data.loan_amount }}K</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Loan Term</span>
+            <span class="rv">{{ form_data.loan_amount_term }} months</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Applicant Income</span>
+            <span class="rv">₹{{ form_data.applicant_income }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Credit History</span>
+            <span class="rv">{% if form_data.credit_history == '1' %}Good{% else %}Poor{% endif %}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Property Area</span>
+            <span class="rv">{{ form_data.property_area }}</span>
+          </div>
+
+          <p class="text-center mt-3 mb-0" style="font-size:.75rem;color:var(--muted-color);">
+            This is a computer-generated prediction receipt. Not a legal document.
+          </p>
+        </div>
+
+        <!-- ── Full Application Summary ─────────────────── -->
+        <div class="glass-card mt-4 no-print">
+          <p class="section-title"><i class="bi bi-clipboard-data me-2"></i>Full Application Summary</p>
+          <table class="summary-table w-100">
+            <tr><td>Applicant Name</td><td>{{ applicant_name }}</td></tr>
+            <tr><td>Gender</td><td>{{ form_data.gender }}</td></tr>
+            <tr><td>Married</td><td>{{ form_data.married }}</td></tr>
+            <tr><td>Dependents</td><td>{{ form_data.dependents }}</td></tr>
+            <tr><td>Education</td><td>{{ form_data.education }}</td></tr>
+            <tr><td>Self Employed</td><td>{{ form_data.self_employed }}</td></tr>
+            <tr><td>Applicant Income</td><td>₹{{ form_data.applicant_income }}</td></tr>
+            <tr><td>Co-Applicant Income</td><td>₹{{ form_data.coapplicant_income }}</td></tr>
+            <tr><td>Loan Amount</td><td>₹{{ form_data.loan_amount }}K</td></tr>
+            <tr><td>Loan Term</td><td>{{ form_data.loan_amount_term }} months</td></tr>
+            <tr><td>Credit History</td><td>{{ form_data.credit_history }}</td></tr>
+            <tr><td>Property Area</td><td>{{ form_data.property_area }}</td></tr>
+          </table>
+        </div>
+
+        <!-- ── Tips (rejected only) ─────────────────────── -->
+        {% if result == 'Rejected' %}
+        <div class="glass-card mt-4 no-print" style="border-color:rgba(255,200,0,.3);">
+          <p class="section-title" style="color:#ffc107;border-color:rgba(255,193,7,.3);">
+            <i class="bi bi-lightbulb-fill me-2"></i>Tips to Improve Your Chances
+          </p>
+          <ul class="list-unstyled mb-0" style="color:var(--body-color);font-size:.9rem;">
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Maintain a good credit history — the #1 factor</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Increase income or add a co-applicant</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Reduce the requested loan amount</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Choose a longer repayment term to lower EMI</li>
+            <li><i class="bi bi-check2 text-warning me-2"></i>Consider a Semiurban or Urban property area</li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- ── Action Buttons ───────────────────────────── -->
+        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap no-print">
+          <a href="{% url 'apply' %}" class="btn-predict">
+            <i class="bi bi-arrow-left-circle me-2"></i>New Application
+          </a>
+          <button class="btn-print" onclick="printReceipt()">
+            <i class="bi bi-printer-fill me-2"></i>Print Receipt
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate probability bars
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.prob-bar-fill').forEach(bar => {
+      const target = bar.dataset.target;
+      setTimeout(() => { bar.style.width = target + '%'; }, 300);
+    });
+  });
+
+  // Print receipt
+  function printReceipt() {
+    window.print();
+  }
+</script>
+{% endblock %}

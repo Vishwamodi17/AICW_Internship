@@ -1,0 +1,234 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}LoanPredict AI – Home{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero-landing {
+    min-height: 88vh;
+    display: flex;
+    align-items: center;
+  }
+  .hero-landing h1 {
+    font-size: 3rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-p) 0%, var(--accent-t) 55%, var(--accent-r) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.2; letter-spacing: -.5px;
+  }
+  .hero-landing p.lead {
+    color: var(--hero-sub); font-size: 1.05rem; max-width: 520px; font-weight: 400;
+  }
+  .btn-hero-primary {
+    background: linear-gradient(135deg, var(--accent-p), var(--accent-t));
+    border: none; border-radius: 100px;
+    padding: 14px 38px; font-size: 1rem; font-weight: 700;
+    color: #fff; letter-spacing: .2px;
+    transition: transform .2s, box-shadow .2s, opacity .2s;
+    text-decoration: none; display: inline-block;
+    box-shadow: 0 4px 24px var(--glow-p);
+  }
+  .btn-hero-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 36px var(--glow-p);
+    color: #fff; opacity: .9;
+  }
+  .btn-hero-outline {
+    background: transparent;
+    border: 1.5px solid var(--card-border);
+    border-radius: 100px;
+    padding: 13px 36px; font-size: 1rem; font-weight: 600;
+    color: var(--body-color);
+    transition: border-color .2s, box-shadow .2s, color .2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-hero-outline:hover {
+    border-color: var(--accent-p);
+    color: var(--accent-p);
+    box-shadow: 0 0 16px var(--glow-p);
+  }
+  .feat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 2rem 1.5rem; text-align: center;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+    backdrop-filter: blur(12px);
+  }
+  .feat-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent-p);
+    box-shadow: 0 8px 32px var(--glow-p);
+  }
+  .feat-icon { font-size: 2.4rem; margin-bottom: .9rem; }
+  .feat-card p, .feat-card h5 { color: #fff !important; }
+  section p.text-muted, .d-flex p.text-muted { color: #fff !important; }
+  [data-theme="light"] .feat-card p,
+  [data-theme="light"] .feat-card h5,
+  [data-theme="light"] section p.text-muted,
+  [data-theme="light"] .d-flex p.text-muted { color: #000 !important; }
+  .stats-strip {
+    background: var(--card-bg);
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    padding: 2.5rem 0;
+    backdrop-filter: blur(12px);
+  }
+  .stat-num {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-p), var(--accent-t));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { color: var(--muted-color); font-size: .85rem; font-weight: 500; }
+  .step-num {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent-p), var(--accent-t));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px var(--glow-p);
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero-landing">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge rounded-pill px-3 py-2 mb-3"
+              style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.4);color:var(--accent-p);font-weight:600;letter-spacing:.5px;">
+          <i class="bi bi-stars me-1"></i>AI-Powered Loan Prediction
+        </span>
+        <h1>Know Your Loan Approval Chances Instantly</h1>
+        <p class="lead mt-3">
+          An AI-powered Loan Approval Prediction System using Gradient Boosting
+          (84.55% accuracy) trained on real Kaggle data — predicts loan approval
+          instantly with reasons.
+        </p>
+        <div class="d-flex gap-3 flex-wrap mt-4">
+          {% if user.is_authenticated %}
+            <a href="{% url 'apply' %}" class="btn-hero-primary">
+              <i class="bi bi-calculator-fill me-2"></i>Check My Loan
+            </a>
+          {% else %}
+            <a href="{% url 'register' %}" class="btn-hero-primary">
+              <i class="bi bi-person-plus-fill me-2"></i>Get Started Free
+            </a>
+            <a href="{% url 'login' %}" class="btn-hero-outline">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-block text-center">
+        <div style="position:relative;display:inline-block;">
+          <div style="width:340px;height:340px;border-radius:50%;
+                      background:radial-gradient(circle,rgba(167,139,250,.18),transparent 70%);
+                      display:flex;align-items:center;justify-content:center;margin:auto;">
+            <i class="bi bi-bank2" style="font-size:9rem;color:rgba(167,139,250,.5);filter:drop-shadow(0 0 30px rgba(167,139,250,.5));"></i>
+          </div>
+          <div class="glass-card px-3 py-2 d-inline-flex align-items-center gap-2"
+               style="position:absolute;top:30px;right:-20px;font-size:.85rem;animation:float 3s ease-in-out infinite;font-weight:600;">
+            <i class="bi bi-patch-check-fill" style="color:var(--accent-t);"></i> Approved
+          </div>
+          <div class="glass-card px-3 py-2 d-inline-flex align-items-center gap-2"
+               style="position:absolute;bottom:50px;left:-30px;font-size:.85rem;animation:float 3s ease-in-out infinite .8s;font-weight:600;">
+            <i class="bi bi-shield-fill-check" style="color:var(--accent-p);"></i> Secure
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-strip">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-num">84.55%</div>
+        <div class="stat-label">Model Accuracy</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num">614</div>
+        <div class="stat-label">Training Samples</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num">15</div>
+        <div class="stat-label">Features Analysed</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num">&lt;1s</div>
+        <div class="stat-label">Prediction Time</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-5" style="color:var(--body-color);">Why Use LoanPredict AI?</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="color:var(--accent-p);"><i class="bi bi-cpu-fill"></i></div>
+          <h5 class="fw-bold">Gradient Boosting Model</h5>
+          <p class="text-muted small mb-0">Trained with RandomizedSearchCV hyperparameter tuning for optimal accuracy.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="color:var(--accent-t);"><i class="bi bi-lightning-charge-fill"></i></div>
+          <h5 class="fw-bold">Instant Results</h5>
+          <p class="text-muted small mb-0">Get your approval probability with a detailed breakdown in under a second.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feat-card">
+          <div class="feat-icon" style="color:var(--accent-r);"><i class="bi bi-shield-lock-fill"></i></div>
+          <h5 class="fw-bold">Secure & Private</h5>
+          <p class="text-muted small mb-0">Your data stays on your device. No data is stored or shared with third parties.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="text-center fw-bold mb-5" style="color:var(--body-color);">How It Works</h2>
+    <div class="row justify-content-center g-4">
+      {% for step in steps %}
+      <div class="col-md-4">
+        <div class="d-flex gap-3 align-items-start">
+          <div class="step-num">{{ forloop.counter }}</div>
+          <div>
+            <h6 class="fw-bold mb-1" style="color:var(--body-color);">{{ step.title }}</h6>
+            <p class="text-muted small mb-0">{{ step.desc }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-center mt-5">
+      {% if user.is_authenticated %}
+        <a href="{% url 'apply' %}" class="btn-hero-primary">
+          <i class="bi bi-arrow-right-circle-fill me-2"></i>Start My Application
+        </a>
+      {% else %}
+        <a href="{% url 'register' %}" class="btn-hero-primary">
+          <i class="bi bi-person-plus-fill me-2"></i>Create Free Account
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}
