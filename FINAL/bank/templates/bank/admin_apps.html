@@ -1,0 +1,67 @@
+{% extends 'bank/base.html' %}
+{% block title %}Admin Panel – LoanAI{% endblock %}
+{% block page_title %}Admin: All Applications{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--primary-light);color:var(--primary);"><i class="fa-solid fa-file-lines"></i></div>
+      <div><div class="stat-value">{{ apps|length }}</div><div class="stat-label">Total Applications</div></div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--success-light);color:var(--success);"><i class="fa-solid fa-circle-check"></i></div>
+      <div><div class="stat-value" style="color:var(--success);">{{ apps|length }}</div><div class="stat-label">Approved</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card-modern">
+  <div class="section-title" style="margin-bottom:20px;"><i class="fa-solid fa-shield-halved"></i> All Applications</div>
+  <div style="overflow-x:auto;">
+    <table class="table-modern">
+      <thead>
+        <tr><th>User</th><th>Receipt ID</th><th>Loan Type</th><th>Amount</th><th>Result</th><th>Probability</th><th>EMI</th><th>Model</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for app in apps %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.72rem;font-weight:700;flex-shrink:0;">
+                {{ app.user.username|first|upper }}
+              </div>
+              <span style="font-weight:600;">{{ app.user.username }}</span>
+            </div>
+          </td>
+          <td><code style="font-size:.72rem;color:var(--primary);background:var(--primary-light);padding:2px 7px;border-radius:4px;">{{ app.receipt_id }}</code></td>
+          <td>{{ app.get_loan_type_display }}</td>
+          <td>₹{{ app.loan_amount }}K</td>
+          <td>
+            {% if app.result == 'Approved' %}
+              <span class="badge-approved">Approved</span>
+            {% else %}
+              <span class="badge-rejected">Rejected</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="progress-modern" style="width:60px;">
+                <div class="progress-fill {% if app.result == 'Approved' %}progress-fill-success{% else %}progress-fill-danger{% endif %}" data-width="{{ app.approved_prob }}"></div>
+              </div>
+              <span style="font-size:.78rem;font-weight:600;">{{ app.approved_prob }}%</span>
+            </div>
+          </td>
+          <td style="font-weight:600;color:var(--primary);">₹{{ app.monthly_emi|floatformat:0 }}</td>
+          <td style="font-size:.78rem;color:var(--text-3);">{{ app.model_used }}</td>
+          <td style="font-size:.78rem;color:var(--text-3);">{{ app.created_at|date:"d M Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

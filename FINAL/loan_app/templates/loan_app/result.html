@@ -1,0 +1,328 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Loan Result – {{ result }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Result hero ── */
+  .result-hero {
+    border-radius: var(--radius-lg); padding: 36px 28px;
+    text-align: center;
+    animation: popIn .5s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+  .result-approved {
+    background: linear-gradient(135deg, rgba(16,185,129,.1), rgba(16,185,129,.04));
+    border: 1.5px solid rgba(16,185,129,.3);
+    box-shadow: 0 0 40px rgba(16,185,129,.15);
+  }
+  .result-rejected {
+    background: linear-gradient(135deg, rgba(239,68,68,.1), rgba(239,68,68,.04));
+    border: 1.5px solid rgba(239,68,68,.3);
+    box-shadow: 0 0 40px rgba(239,68,68,.15);
+  }
+  .result-icon  { font-size: 4.5rem; }
+  .result-title { font-size: 2.2rem; font-weight: 900; margin-top: .5rem; letter-spacing: -.5px; }
+  .result-sub   { font-size: .95rem; color: var(--text-2); margin-top: 8px; }
+
+  /* ── Applicant banner ── */
+  .applicant-banner { font-size: 1rem; font-weight: 600; color: var(--text-2); margin-top: 12px; }
+  .applicant-banner span { font-weight: 800; }
+
+  /* ── Reason items ── */
+  .reason-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid var(--border-2);
+    animation: fadeUp .4s ease both;
+  }
+  .reason-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .reason-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .r-pos { background: rgba(16,185,129,.12); color: var(--green-bright); }
+  .r-neg { background: rgba(239,68,68,.12);  color: #fca5a5; }
+  .r-neu { background: rgba(245,158,11,.12); color: var(--amber); }
+  .impact-tag {
+    font-size: .6rem; font-weight: 800; padding: 2px 7px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: .5px;
+    margin-left: 6px; vertical-align: middle;
+  }
+  .imp-High   { background: rgba(239,68,68,.12);  color: #fca5a5; }
+  .imp-Medium { background: rgba(245,158,11,.12); color: var(--amber); }
+  .imp-Low    { background: rgba(16,185,129,.12); color: var(--green-bright); }
+
+  /* ── Receipt ── */
+  .receipt-card {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius); padding: 28px; position: relative;
+    background: var(--surface);
+  }
+  .receipt-stamp {
+    position: absolute; top: 20px; right: 20px;
+    width: 68px; height: 68px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; font-size: .5rem; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase; border: 2.5px solid;
+    opacity: .85;
+  }
+  .receipt-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid var(--border-2);
+    font-size: .82rem;
+  }
+  .receipt-row:last-child { border-bottom: none; }
+  .rk { color: var(--text-3); font-weight: 500; }
+  .rv { font-weight: 600; color: var(--text); }
+
+  /* ── Print ── */
+  @media print {
+    .no-print { display: none !important; }
+    .receipt-card { border: 1px dashed #999 !important; }
+    body { background: #fff !important; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+
+<section class="hero no-print">
+  <div class="container">
+    <h1>Prediction Result</h1>
+    <p>Here's what our AI model says about your loan application.</p>
+  </div>
+</section>
+
+<section class="pb-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7" id="receiptArea">
+
+        <!-- ── Main Result Card ─────────────────────────── -->
+        <div class="result-hero {% if result == 'Approved' %}result-approved{% else %}result-rejected{% endif %} mb-4">
+
+          {% if result == 'Approved' %}
+            <div class="result-icon text-glow-green"><i class="bi bi-patch-check-fill"></i></div>
+            <div class="result-title" style="color:var(--green-bright);">Loan Approved!</div>
+          {% else %}
+            <div class="result-icon" style="color:#fca5a5;"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="result-title" style="color:#fca5a5;">Loan Rejected</div>
+          {% endif %}
+
+          <!-- Applicant name -->
+          <div class="applicant-banner">
+            Applicant: <span>{{ applicant_name }}</span>
+          </div>
+
+          <!-- Loan type badge -->
+          {% if loan_type %}
+          <div style="margin-top:10px;">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:4px 14px;font-size:.8rem;font-weight:600;color:var(--accent-p);">
+              <i class="bi {{ loan_type.icon }}"></i>
+              {{ loan_type.label }} &nbsp;·&nbsp; {{ loan_type.rate }}% p.a.
+            </span>
+          </div>
+          {% endif %}
+
+          <p class="result-subtitle mt-2">
+            {% if result == 'Approved' %}
+              Congratulations <strong>{{ applicant_name }}</strong>! Based on your profile,
+              your loan application is likely to be approved.
+            {% else %}
+              Sorry <strong>{{ applicant_name }}</strong>, your application does not meet
+              the current approval criteria. See tips below.
+            {% endif %}
+          </p>
+
+          <!-- Probability bars -->
+          <div class="mt-4 text-start px-2">
+            <div class="d-flex justify-content-between mb-1">
+              <small style="color:var(--green-bright);font-weight:600;">Approval Probability</small>
+              <small style="color:var(--green-bright);font-weight:700;">{{ approved_prob }}%</small>
+            </div>
+            <div class="progress-track mb-3">
+              <div class="progress-fill progress-green" data-w="{{ approved_prob }}"></div>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <small style="color:#fca5a5;font-weight:600;">Rejection Probability</small>
+              <small style="color:#fca5a5;font-weight:700;">{{ rejected_prob }}%</small>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill progress-red" data-w="{{ rejected_prob }}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Why This Decision ───────────────────────── -->
+        <div class="card mt-4">
+          <div class="sec-title">
+            <i class="bi bi-search"></i> Why Your Loan Was {{ result }}
+          </div>
+          <p style="font-size:.82rem;color:var(--text-2);margin-bottom:1rem;">
+            Key factors that influenced this decision, ranked by impact.
+          </p>
+
+          {% for r in reasons %}
+          <div class="reason-item" style="animation-delay:{{ forloop.counter0 }}00ms;">
+            <div class="reason-icon r-{{ r.status|slice:':3' }}">
+              <i class="bi {{ r.icon }}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div style="font-size:.7rem;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;">
+                {{ r.label }}
+                <span class="impact-tag imp-{{ r.impact }}">{{ r.impact }}</span>
+              </div>
+              <p style="font-size:.85rem;color:var(--text-2);margin:3px 0 0;">{{ r.detail }}</p>
+            </div>
+            <div class="flex-shrink-0 pt-1">
+              {% if r.status == 'positive' %}
+                <i class="bi bi-check-circle-fill" style="color:var(--green-bright);font-size:1.1rem;"></i>
+              {% elif r.status == 'negative' %}
+                <i class="bi bi-x-circle-fill" style="color:#fca5a5;font-size:1.1rem;"></i>
+              {% else %}
+                <i class="bi bi-dash-circle-fill" style="color:var(--amber);font-size:1.1rem;"></i>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- ── Printable Receipt ────────────────────────── -->
+        <div class="receipt-card mt-4">
+
+          <!-- Stamp -->
+          <div class="receipt-stamp" style="border-color:{% if result == 'Approved' %}var(--green){% else %}var(--red){% endif %};color:{% if result == 'Approved' %}var(--green-bright){% else %}#fca5a5{% endif %};">
+            <i class="bi {% if result == 'Approved' %}bi-check-lg{% else %}bi-x-lg{% endif %}" style="font-size:1.3rem;"></i>
+            {{ result }}
+          </div>
+
+          <div class="sec-title"><i class="bi bi-receipt"></i> Official Receipt</div>
+
+          <div class="receipt-row">
+            <span class="rk">Receipt ID</span>
+            <span class="rv" style="font-family:monospace;">{{ receipt_id }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Date &amp; Time</span>
+            <span class="rv">{{ receipt_date }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Applicant Name</span>
+            <span class="rv">{{ applicant_name }}</span>
+          </div>
+          {% if loan_type %}
+          <div class="receipt-row">
+            <span class="rk">Loan Type</span>
+            <span class="rv"><i class="bi {{ loan_type.icon }} me-1" style="color:{{ loan_type.color }};"></i>{{ loan_type.label }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Interest Rate</span>
+            <span class="rv">{{ loan_type.rate }}% p.a.</span>
+          </div>
+          {% endif %}
+          <div class="receipt-row">
+            <span class="rk">Decision</span>
+            <span class="rv" style="color:{% if result == 'Approved' %}#00c864{% else %}#ff3c3c{% endif %};">
+              {{ result }}
+            </span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Approval Probability</span>
+            <span class="rv">{{ approved_prob }}%</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Loan Amount</span>
+            <span class="rv">₹{{ form_data.loan_amount }}K</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Loan Term</span>
+            <span class="rv">{{ form_data.loan_amount_term }} months</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Applicant Income</span>
+            <span class="rv">₹{{ form_data.applicant_income }}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Credit History</span>
+            <span class="rv">{% if form_data.credit_history == '1' %}Good{% else %}Poor{% endif %}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="rk">Property Area</span>
+            <span class="rv">{{ form_data.property_area }}</span>
+          </div>
+
+          <p class="text-center mt-3 mb-0" style="font-size:.75rem;color:var(--muted-color);">
+            This is a computer-generated prediction receipt. Not a legal document.
+          </p>
+        </div>
+
+        <!-- ── Full Application Summary ─────────────────── -->
+        <div class="glass-card mt-4 no-print">
+          <p class="section-title"><i class="bi bi-clipboard-data me-2"></i>Full Application Summary</p>
+          <table class="summary-table w-100">
+            <tr><td>Applicant Name</td><td>{{ applicant_name }}</td></tr>
+            <tr><td>Gender</td><td>{{ form_data.gender }}</td></tr>
+            <tr><td>Married</td><td>{{ form_data.married }}</td></tr>
+            <tr><td>Dependents</td><td>{{ form_data.dependents }}</td></tr>
+            <tr><td>Education</td><td>{{ form_data.education }}</td></tr>
+            <tr><td>Self Employed</td><td>{{ form_data.self_employed }}</td></tr>
+            <tr><td>Applicant Income</td><td>₹{{ form_data.applicant_income }}</td></tr>
+            <tr><td>Co-Applicant Income</td><td>₹{{ form_data.coapplicant_income }}</td></tr>
+            <tr><td>Loan Amount</td><td>₹{{ form_data.loan_amount }}K</td></tr>
+            <tr><td>Loan Term</td><td>{{ form_data.loan_amount_term }} months</td></tr>
+            <tr><td>Credit History</td><td>{{ form_data.credit_history }}</td></tr>
+            <tr><td>Property Area</td><td>{{ form_data.property_area }}</td></tr>
+          </table>
+        </div>
+
+        <!-- ── Tips (rejected only) ─────────────────────── -->
+        {% if result == 'Rejected' %}
+        <div class="glass-card mt-4 no-print" style="border-color:rgba(255,200,0,.3);">
+          <p class="section-title" style="color:#ffc107;border-color:rgba(255,193,7,.3);">
+            <i class="bi bi-lightbulb-fill me-2"></i>Tips to Improve Your Chances
+          </p>
+          <ul class="list-unstyled mb-0" style="color:var(--body-color);font-size:.9rem;">
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Maintain a good credit history — the #1 factor</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Increase income or add a co-applicant</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Reduce the requested loan amount</li>
+            <li class="mb-2"><i class="bi bi-check2 text-warning me-2"></i>Choose a longer repayment term to lower EMI</li>
+            <li><i class="bi bi-check2 text-warning me-2"></i>Consider a Semiurban or Urban property area</li>
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- ── Action Buttons ───────────────────────────── -->
+        <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap no-print">
+          <a href="{% url 'apply' %}" class="btn-primary">
+            <i class="bi bi-plus-circle"></i> New Application
+          </a>
+          <button class="btn-ghost" onclick="window.print()">
+            <i class="bi bi-printer"></i> Print Receipt
+          </button>
+          <a href="{% url 'landing' %}" class="btn-ghost">
+            <i class="bi bi-house"></i> Home
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate probability bars
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.prob-bar-fill').forEach(bar => {
+      const target = bar.dataset.target;
+      setTimeout(() => { bar.style.width = target + '%'; }, 300);
+    });
+  });
+
+  // Print receipt
+  function printReceipt() {
+    window.print();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% block title %}LoanPredict AI{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       DEEP SPACE FINANCE — DESIGN SYSTEM
+    ═══════════════════════════════════════════════ */
+    :root {
+      /* Core palette */
+      --navy:        #020817;
+      --navy-2:      #0a1628;
+      --navy-3:      #0f2040;
+      --surface:     #0d1f3c;
+      --surface-2:   #112244;
+      --border:      rgba(99,179,237,0.12);
+      --border-2:    rgba(99,179,237,0.06);
+
+      /* Accents */
+      --blue:        #3b82f6;
+      --blue-bright: #60a5fa;
+      --blue-glow:   rgba(59,130,246,0.35);
+      --green:       #10b981;
+      --green-bright:#34d399;
+      --green-glow:  rgba(16,185,129,0.3);
+      --red:         #ef4444;
+      --red-glow:    rgba(239,68,68,0.3);
+      --amber:       #f59e0b;
+      --purple:      #8b5cf6;
+
+      /* Text */
+      --text:        #f0f6ff;
+      --text-2:      #94a3b8;
+      --text-3:      #475569;
+
+      /* Gradients */
+      --grad-blue:   linear-gradient(135deg, #1e40af, #3b82f6);
+      --grad-green:  linear-gradient(135deg, #065f46, #10b981);
+      --grad-hero:   linear-gradient(135deg, #020817 0%, #0a1628 50%, #0d2040 100%);
+      --grad-card:   linear-gradient(135deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03));
+
+      /* Shadows */
+      --shadow-sm:   0 1px 3px rgba(0,0,0,0.4);
+      --shadow:      0 4px 20px rgba(0,0,0,0.5);
+      --shadow-blue: 0 0 30px rgba(59,130,246,0.15);
+      --shadow-green:0 0 30px rgba(16,185,129,0.15);
+
+      /* Misc */
+      --radius:      16px;
+      --radius-sm:   10px;
+      --radius-lg:   24px;
+    }
+
+    [data-theme="light"] {
+      --navy:        #f8faff;
+      --navy-2:      #eef2ff;
+      --navy-3:      #e0e7ff;
+      --surface:     #ffffff;
+      --surface-2:   #f1f5f9;
+      --border:      rgba(59,130,246,0.15);
+      --border-2:    rgba(59,130,246,0.08);
+      --text:        #0f172a;
+      --text-2:      #475569;
+      --text-3:      #94a3b8;
+      --grad-hero:   linear-gradient(135deg, #f8faff 0%, #eef2ff 50%, #e0f2fe 100%);
+      --grad-card:   linear-gradient(135deg, rgba(59,130,246,0.04), rgba(16,185,129,0.02));
+      --shadow:      0 4px 20px rgba(0,0,0,0.08);
+      --shadow-blue: 0 0 30px rgba(59,130,246,0.1);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background .3s, color .3s;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background grid ── */
+    [data-theme="dark"] body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Navbar ── */
+    .navbar-main {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(2,8,23,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    [data-theme="light"] .navbar-main {
+      background: rgba(248,250,255,0.9);
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-brand-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--grad-blue);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: .9rem;
+      box-shadow: 0 0 16px var(--blue-glow);
+    }
+    .nav-brand-text {
+      font-size: 1.05rem; font-weight: 800;
+      background: linear-gradient(90deg, var(--blue-bright), var(--green-bright));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -.3px;
+    }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-link-item {
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      color: var(--text-2); text-decoration: none;
+      font-size: .85rem; font-weight: 500;
+      transition: all .2s; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-link-item:hover { color: var(--blue-bright); background: rgba(59,130,246,.08); }
+    .nav-link-item.active { color: var(--blue-bright); background: rgba(59,130,246,.1); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: var(--grad-blue);
+      border: none; border-radius: var(--radius-sm);
+      padding: 9px 22px; font-size: .85rem; font-weight: 600;
+      color: #fff; cursor: pointer; display: inline-flex;
+      align-items: center; gap: 7px; text-decoration: none;
+      transition: all .2s;
+      box-shadow: 0 4px 14px var(--blue-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--blue-glow);
+      color: #fff;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 20px; font-size: .85rem; font-weight: 500;
+      color: var(--text-2); cursor: pointer; display: inline-flex;
+      align-items: center; gap: 7px; text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--blue-bright); background: rgba(59,130,246,.06); }
+    .btn-success {
+      background: var(--grad-green);
+      border: none; border-radius: var(--radius-sm);
+      padding: 9px 22px; font-size: .85rem; font-weight: 600;
+      color: #fff; cursor: pointer; display: inline-flex;
+      align-items: center; gap: 7px; text-decoration: none;
+      transition: all .2s;
+      box-shadow: 0 4px 14px var(--green-glow);
+    }
+    .btn-success:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--green-glow); color: #fff; }
+    .btn-lg { padding: 13px 32px; font-size: .95rem; border-radius: var(--radius); }
+    .btn-icon { width: 36px; height: 36px; padding: 0; justify-content: center; border-radius: var(--radius-sm); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .2s, transform .2s, border-color .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--grad-card);
+      pointer-events: none;
+    }
+    .card:hover { box-shadow: var(--shadow-blue); border-color: rgba(59,130,246,.25); }
+    .card-lg { padding: 32px; }
+    .card-glow-green { box-shadow: var(--shadow-green) !important; border-color: rgba(16,185,129,.25) !important; }
+    .card-glow-red   { box-shadow: 0 0 30px var(--red-glow) !important; border-color: rgba(239,68,68,.25) !important; }
+
+    /* ── Form controls ── */
+    .form-label {
+      font-size: .72rem; font-weight: 700; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+      display: block;
+    }
+    .form-control, .form-select {
+      background: var(--navy-2) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius-sm) !important;
+      color: var(--text) !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: .875rem !important;
+      padding: 10px 14px !important;
+      transition: border-color .2s, box-shadow .2s !important;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--blue) !important;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15) !important;
+      background: var(--surface) !important;
+    }
+    .form-control::placeholder { color: var(--text-3) !important; }
+    .form-select option { background: var(--navy-2); color: var(--text); }
+    [data-theme="light"] .form-control,
+    [data-theme="light"] .form-select { background: #fff !important; }
+
+    /* ── Section title ── */
+    .sec-title {
+      font-size: .68rem; font-weight: 800;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--blue-bright);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 16px;
+    }
+    .sec-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ── Badges ── */
+    .badge-approved {
+      background: rgba(16,185,129,.12); color: var(--green-bright);
+      border: 1px solid rgba(16,185,129,.25);
+      border-radius: 20px; padding: 3px 12px;
+      font-size: .7rem; font-weight: 700; letter-spacing: .5px;
+    }
+    .badge-rejected {
+      background: rgba(239,68,68,.12); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: 20px; padding: 3px 12px;
+      font-size: .7rem; font-weight: 700; letter-spacing: .5px;
+    }
+    .badge-info {
+      background: rgba(59,130,246,.12); color: var(--blue-bright);
+      border: 1px solid rgba(59,130,246,.25);
+      border-radius: 20px; padding: 3px 12px;
+      font-size: .7rem; font-weight: 700;
+    }
+
+    /* ── Progress bars ── */
+    .progress-track {
+      background: rgba(255,255,255,.06);
+      border-radius: 50px; height: 8px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 50px;
+      transition: width 1.4s cubic-bezier(.4,0,.2,1);
+    }
+    .progress-blue  { background: linear-gradient(90deg, var(--blue), var(--blue-bright)); }
+    .progress-green { background: linear-gradient(90deg, var(--green), var(--green-bright)); }
+    .progress-red   { background: linear-gradient(90deg, var(--red), #f87171); }
+
+    /* ── Tables ── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th {
+      font-size: .65rem; font-weight: 800; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      background: var(--navy-2);
+    }
+    .tbl td {
+      padding: 12px 14px; border-bottom: 1px solid var(--border-2);
+      font-size: .85rem; color: var(--text-2);
+    }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: rgba(59,130,246,.04); }
+
+    /* ── Glow text ── */
+    .text-glow-blue  { color: var(--blue-bright); text-shadow: 0 0 20px var(--blue-glow); }
+    .text-glow-green { color: var(--green-bright); text-shadow: 0 0 20px var(--green-glow); }
+    .text-gradient {
+      background: linear-gradient(135deg, var(--blue-bright), var(--green-bright));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* ── Theme toggle ── */
+    #themeToggle {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 7px 12px;
+      color: var(--text-2); cursor: pointer; font-size: .82rem;
+      display: flex; align-items: center; gap: 6px;
+      transition: all .2s;
+    }
+    #themeToggle:hover { border-color: var(--blue); color: var(--blue-bright); }
+
+    /* ── Logout btn ── */
+    .btn-logout {
+      border: 1px solid rgba(239,68,68,.3); color: #fca5a5;
+      border-radius: var(--radius-sm); padding: 7px 14px;
+      font-size: .82rem; font-weight: 600; background: transparent;
+      cursor: pointer; display: inline-flex; align-items: center;
+      gap: 6px; text-decoration: none; transition: all .2s;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,.08); color: #fca5a5; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+    }
+
+    /* ── Print ── */
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .card { box-shadow: none !important; border: 1px solid #ddd !important; background: #fff !important; }
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px var(--blue-glow); }
+      50%       { box-shadow: 0 0 40px var(--blue-glow), 0 0 60px rgba(59,130,246,.1); }
+    }
+    .animate-fade-up { animation: fadeUp .5s ease both; }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar-main no-print">
+    <a href="{% url 'landing' %}" class="nav-brand">
+      <div class="nav-brand-icon"><i class="bi bi-cpu-fill"></i></div>
+      <span class="nav-brand-text">LoanPredict AI</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="{% url 'landing' %}" class="nav-link-item {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">
+        <i class="bi bi-house"></i> Home
+      </a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'apply' %}" class="nav-link-item {% if request.resolver_match.url_name == 'apply' %}active{% endif %}">
+        <i class="bi bi-file-earmark-plus"></i> Apply
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="nav-actions">
+      <button id="themeToggle" onclick="toggleTheme()">
+        <i class="bi bi-sun-fill" id="themeIcon"></i>
+        <span id="themeLabel">Light</span>
+      </button>
+      {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}" class="btn-logout">
+          <i class="bi bi-power"></i> {{ user.username }}
+        </a>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn-ghost" style="padding:7px 16px;font-size:.82rem;">Sign In</a>
+        <a href="{% url 'register' %}" class="btn-primary" style="padding:7px 16px;font-size:.82rem;">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <div style="position:relative;z-index:1;">
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer class="no-print" style="text-align:center;padding:28px;color:var(--text-3);font-size:.78rem;border-top:1px solid var(--border);margin-top:40px;">
+    <span style="font-family:'JetBrains Mono',monospace;">
+      © 2026 LoanPredict AI &nbsp;·&nbsp; Gradient Boosting · 84.55% Accuracy · Django + Python
+    </span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const root = document.documentElement;
+    applyTheme(localStorage.getItem('dsf-theme') || 'dark');
+
+    function applyTheme(t) {
+      root.setAttribute('data-theme', t);
+      localStorage.setItem('dsf-theme', t);
+      const icon  = document.getElementById('themeIcon');
+      const label = document.getElementById('themeLabel');
+      if (icon)  icon.className    = t === 'light' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+      if (label) label.textContent = t === 'light' ? 'Dark' : 'Light';
+    }
+    function toggleTheme() {
+      applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    }
+
+    // Animate progress bars on load
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.progress-fill[data-w]').forEach(b => {
+        const w = b.dataset.w;
+        b.style.width = '0%';
+        setTimeout(() => b.style.width = w + '%', 400);
+      });
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,317 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}LoanPredict AI – Smart Loan Eligibility{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center;
+    padding: 60px 0;
+    position: relative;
+  }
+  .hero-title {
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 900; line-height: 1.1;
+    letter-spacing: -1.5px;
+  }
+  .hero-sub {
+    font-size: 1.05rem; color: var(--text-2);
+    max-width: 500px; line-height: 1.75; margin-top: 16px;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(59,130,246,.1); color: var(--blue-bright);
+    border: 1px solid rgba(59,130,246,.25);
+    border-radius: 100px; padding: 5px 16px;
+    font-size: .75rem; font-weight: 700; letter-spacing: .5px;
+    margin-bottom: 20px;
+  }
+  .hero-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green-bright);
+    box-shadow: 0 0 8px var(--green-glow);
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Mock result card */
+  .mock-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-blue);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  /* Feature cards */
+  .feat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all .25s;
+    height: 100%;
+  }
+  .feat-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(59,130,246,.3);
+    box-shadow: var(--shadow-blue);
+  }
+  .feat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 16px;
+  }
+
+  /* Stats */
+  .stat-num {
+    font-size: 2.4rem; font-weight: 900; line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Steps */
+  .step-num {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .9rem; color: var(--blue-bright);
+    flex-shrink: 0;
+  }
+
+  /* Loan type pills */
+  .lt-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    font-size: .82rem; font-weight: 600; color: var(--text-2);
+    transition: all .2s;
+  }
+  .lt-pill:hover { border-color: var(--blue); color: var(--blue-bright); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6 animate-fade-up">
+        <div class="hero-badge">
+          <i class="bi bi-cpu-fill me-1"></i> AI-Powered · Real-time Prediction
+        </div>
+        <h1 class="hero-title">
+          <span class="text-gradient">Smart Loan</span><br>
+          Eligibility<br>Checker
+        </h1>
+        <p class="hero-sub">
+          AI-powered system to predict and improve your loan approval chances.
+          Get instant decisions with explainable AI and personalised insights.
+        </p>
+        <div class="d-flex gap-3 flex-wrap mt-4">
+          {% if user.is_authenticated %}
+            <a href="{% url 'apply' %}" class="btn-primary btn-lg">
+              <i class="bi bi-file-earmark-plus"></i> Check Eligibility
+            </a>
+          {% else %}
+            <a href="{% url 'register' %}" class="btn-primary btn-lg">
+              <i class="bi bi-rocket-takeoff"></i> Get Started Free
+            </a>
+            <a href="{% url 'login' %}" class="btn-ghost btn-lg">
+              <i class="bi bi-box-arrow-in-right"></i> Sign In
+            </a>
+          {% endif %}
+        </div>
+        <div class="d-flex gap-4 mt-4 flex-wrap">
+          <div style="font-size:.78rem;color:var(--text-3);display:flex;align-items:center;gap:5px;">
+            <i class="bi bi-shield-fill-check" style="color:var(--green);"></i> Secure & Private
+          </div>
+          <div style="font-size:.78rem;color:var(--text-3);display:flex;align-items:center;gap:5px;">
+            <i class="bi bi-lightning-fill" style="color:var(--amber);"></i> Instant Results
+          </div>
+          <div style="font-size:.78rem;color:var(--text-3);display:flex;align-items:center;gap:5px;">
+            <i class="bi bi-graph-up-arrow" style="color:var(--blue-bright);"></i> Explainable AI
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 d-none d-lg-block animate-fade-up delay-2">
+        <div class="mock-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green-glow);"></div>
+            <span style="font-size:.72rem;font-weight:700;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;">Live Prediction</span>
+          </div>
+          <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div>
+                <div style="font-weight:800;font-size:1.1rem;color:var(--green-bright);">✓ Loan Approved</div>
+                <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">Home Loan · ₹150K · 8.5% p.a.</div>
+              </div>
+              <div style="font-size:2rem;font-weight:900;color:var(--green-bright);font-family:'JetBrains Mono',monospace;">87%</div>
+            </div>
+            <div style="font-size:.7rem;color:var(--text-3);margin-bottom:5px;">Approval Probability</div>
+            <div class="progress-track">
+              <div class="progress-fill progress-green" style="width:87%;"></div>
+            </div>
+          </div>
+          <div style="font-size:.68rem;font-weight:800;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Key Factors</div>
+          {% for f in mock_factors %}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+            <span style="font-size:.82rem;color:var(--text-2);flex:1;">{{ f }}</span>
+            <span style="font-size:.68rem;font-weight:700;color:var(--green-bright);">Positive</span>
+          </div>
+          {% empty %}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div><span style="font-size:.82rem;color:var(--text-2);flex:1;">Credit History</span><span style="font-size:.68rem;font-weight:700;color:var(--green-bright);">Positive</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div><span style="font-size:.82rem;color:var(--text-2);flex:1;">Total Income</span><span style="font-size:.68rem;font-weight:700;color:var(--green-bright);">Positive</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div><span style="font-size:.82rem;color:var(--text-2);flex:1;">Property Area</span><span style="font-size:.68rem;font-weight:700;color:var(--green-bright);">Positive</span></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;"></div><span style="font-size:.82rem;color:var(--text-2);flex:1;">Loan Amount</span><span style="font-size:.68rem;font-weight:700;color:var(--green-bright);">Positive</span></div>
+          {% endfor %}
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;text-align:center;">
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--blue-bright);font-family:'JetBrains Mono',monospace;">₹8,240</div>
+              <div style="font-size:.65rem;color:var(--text-3);">Monthly EMI</div>
+            </div>
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;">360</div>
+              <div style="font-size:.65rem;color:var(--text-3);">Months</div>
+            </div>
+            <div>
+              <div style="font-size:1rem;font-weight:800;color:var(--amber);font-family:'JetBrains Mono',monospace;">84.55%</div>
+              <div style="font-size:.65rem;color:var(--text-3);">Accuracy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ─────────────────────────────────────────────── -->
+<section style="padding:40px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-num text-gradient">84.55%</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-top:4px;font-weight:500;">Model Accuracy</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num text-gradient">614</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-top:4px;font-weight:500;">Training Records</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num text-gradient">15</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-top:4px;font-weight:500;">Features Analysed</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-num text-gradient">&lt;1s</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-top:4px;font-weight:500;">Prediction Time</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ──────────────────────────────────────────── -->
+<section style="padding:80px 0;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="hero-badge" style="margin-bottom:12px;">Features</div>
+      <h2 style="font-size:1.9rem;font-weight:800;letter-spacing:-.5px;">Everything you need to make smart loan decisions</h2>
+      <p style="color:var(--text-2);max-width:480px;margin:10px auto 0;font-size:.9rem;">Powered by machine learning with full transparency and explainability.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4 animate-fade-up delay-1">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(59,130,246,.1);color:var(--blue-bright);">
+            <i class="bi bi-lightning-fill"></i>
+          </div>
+          <h6 style="font-weight:700;margin-bottom:8px;">Instant Prediction</h6>
+          <p style="font-size:.85rem;color:var(--text-2);margin:0;">Get loan approval prediction in under 1 second using our trained Gradient Boosting model.</p>
+        </div>
+      </div>
+      <div class="col-md-4 animate-fade-up delay-2">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(16,185,129,.1);color:var(--green-bright);">
+            <i class="bi bi-search"></i>
+          </div>
+          <h6 style="font-weight:700;margin-bottom:8px;">Explainable AI</h6>
+          <p style="font-size:.85rem;color:var(--text-2);margin:0;">Understand exactly why your loan was approved or rejected with factor-wise analysis.</p>
+        </div>
+      </div>
+      <div class="col-md-4 animate-fade-up delay-3">
+        <div class="feat-card">
+          <div class="feat-icon" style="background:rgba(245,158,11,.1);color:var(--amber);">
+            <i class="bi bi-receipt"></i>
+          </div>
+          <h6 style="font-weight:700;margin-bottom:8px;">Official Receipt</h6>
+          <p style="font-size:.85rem;color:var(--text-2);margin:0;">Get a printable decision receipt with Receipt ID, probability, and full application summary.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Loan Types ─────────────────────────────────────────── -->
+<section style="padding:0 0 80px;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="hero-badge" style="margin-bottom:12px;">Loan Products</div>
+      <h2 style="font-size:1.9rem;font-weight:800;letter-spacing:-.5px;">5 Loan Types Supported</h2>
+    </div>
+    <div class="row g-3">
+      {% for key, lt in loan_types.items %}
+      <div class="col-6 col-md-4 col-lg">
+        <div class="lt-pill">
+          <i class="bi {{ lt.icon }}" style="color:{{ lt.color }};font-size:1.1rem;"></i>
+          <div>
+            <div style="font-weight:700;font-size:.82rem;">{{ lt.label }}</div>
+            <div style="font-size:.7rem;color:var(--text-3);">{{ lt.rate }}% p.a.</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ───────────────────────────────────────── -->
+<section style="padding:0 0 80px;">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="hero-badge" style="margin-bottom:12px;">Process</div>
+      <h2 style="font-size:1.9rem;font-weight:800;letter-spacing:-.5px;">How It Works</h2>
+    </div>
+    <div class="row justify-content-center g-4">
+      {% for step in steps %}
+      <div class="col-md-4">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div class="step-num">{{ forloop.counter }}</div>
+          <div>
+            <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">{{ step.title }}</div>
+            <div style="font-size:.82rem;color:var(--text-2);">{{ step.desc }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-center mt-5">
+      {% if user.is_authenticated %}
+        <a href="{% url 'apply' %}" class="btn-primary btn-lg">
+          <i class="bi bi-arrow-right-circle"></i> Start My Application
+        </a>
+      {% else %}
+        <a href="{% url 'register' %}" class="btn-primary btn-lg">
+          <i class="bi bi-person-plus"></i> Create Free Account
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,429 @@
+{% extends 'bank/base.html' %}
+{% block title %}Apply for Loan – LoanAI{% endblock %}
+{% block page_title %}Loan Application{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Multi-step progress */
+  .step-progress { display: flex; align-items: center; margin-bottom: 36px; }
+  .step-item {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative;
+  }
+  .step-item:not(:last-child)::after {
+    content: ''; position: absolute; top: 18px; left: 50%;
+    width: 100%; height: 2px; background: var(--border); z-index: 0;
+  }
+  .step-item.done:not(:last-child)::after { background: var(--primary); }
+  .step-circle {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .82rem; font-weight: 700; z-index: 1;
+    border: 2px solid var(--border); background: var(--surface);
+    color: var(--text-3); transition: all .3s;
+  }
+  .step-item.active .step-circle {
+    background: var(--primary); border-color: var(--primary);
+    color: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.15);
+  }
+  .step-item.done .step-circle {
+    background: var(--success); border-color: var(--success); color: #fff;
+  }
+  .step-label {
+    font-size: .7rem; font-weight: 600; color: var(--text-3);
+    margin-top: 6px; text-align: center; white-space: nowrap;
+  }
+  .step-item.active .step-label { color: var(--primary); }
+  .step-item.done .step-label  { color: var(--success); }
+
+  /* Step panels */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Loan type selector */
+  .loan-type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .loan-type-opt { display: none; }
+  .loan-type-label {
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 16px 12px; text-align: center; cursor: pointer;
+    transition: all .2s; background: var(--bg);
+  }
+  .loan-type-label:hover { border-color: var(--primary); background: var(--primary-light); }
+  .loan-type-opt:checked + .loan-type-label {
+    border-color: var(--primary); background: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+  .loan-type-label i { font-size: 1.4rem; display: block; margin-bottom: 6px; }
+  .loan-type-label .lt-name { font-size: .82rem; font-weight: 600; color: var(--text); }
+  .loan-type-label .lt-rate { font-size: .72rem; color: var(--text-3); }
+
+  /* Select styling */
+  select.form-control-modern {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 32px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card-modern card-modern-lg">
+
+      <!-- Step Progress -->
+      <div class="step-progress">
+        <div class="step-item active" id="step-ind-1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Loan Type</div>
+        </div>
+        <div class="step-item" id="step-ind-2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Personal</div>
+        </div>
+        <div class="step-item" id="step-ind-3">
+          <div class="step-circle">3</div>
+          <div class="step-label">Financial</div>
+        </div>
+        <div class="step-item" id="step-ind-4">
+          <div class="step-circle">4</div>
+          <div class="step-label">Submit</div>
+        </div>
+      </div>
+
+      <form method="POST" action="{% url 'bank_predict' %}" novalidate id="loanForm" data-loading>
+        {% csrf_token %}
+
+        <!-- Step 1: Loan Type -->
+        <div class="step-panel active" id="panel-1">
+          <h5 style="font-weight:700;margin-bottom:4px;">Select Loan Type</h5>
+          <p style="color:var(--text-3);font-size:.85rem;margin-bottom:24px;">Choose the type of loan you want to apply for.</p>
+
+          <div class="loan-type-grid">
+            {% for key, lt in loan_types.items %}
+            <div>
+              <input type="radio" name="loan_type" id="lt_{{ key }}" value="{{ key }}"
+                     class="loan-type-opt" {% if key == 'home' %}checked{% endif %}>
+              <label for="lt_{{ key }}" class="loan-type-label">
+                <i class="fa-solid {% if key == 'home' %}fa-house{% elif key == 'personal' %}fa-user{% else %}fa-car{% endif %}"
+                   style="color:{% if key == 'home' %}var(--primary){% elif key == 'personal' %}#7c3aed{% else %}var(--success){% endif %};"></i>
+                <div class="lt-name">{{ lt.label }}</div>
+                <div class="lt-rate">{{ lt.rate }}% p.a.</div>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div style="margin-top:28px;padding:16px;background:var(--primary-light);border-radius:var(--radius-sm);border:1px solid rgba(37,99,235,.15);">
+            <div style="font-size:.78rem;font-weight:600;color:var(--primary);margin-bottom:8px;">
+              <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>Loan Type Details
+            </div>
+            {% for key, lt in loan_types.items %}
+            <div id="lt-info-{{ key }}" style="display:{% if key == 'home' %}block{% else %}none{% endif %};">
+              <div style="font-size:.82rem;color:var(--text-2);">
+                <strong>{{ lt.label }}</strong> · {{ lt.rate }}% p.a. · Max {{ lt.max_term }} months · Min income ₹{{ lt.min_income|floatformat:0 }}
+              </div>
+              <div style="font-size:.78rem;color:var(--text-3);margin-top:2px;">{{ lt.description }}</div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div style="margin-top:24px;text-align:right;">
+            <button type="button" class="btn-primary-modern" onclick="goStep(2)">
+              Next: Personal Details <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Personal Details -->
+        <div class="step-panel" id="panel-2">
+          <h5 style="font-weight:700;margin-bottom:4px;">Personal Information</h5>
+          <p style="color:var(--text-3);font-size:.85rem;margin-bottom:24px;">Tell us about yourself.</p>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Gender</label>
+                <select name="gender" class="form-control-modern">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Marital Status</label>
+                <select name="married" class="form-control-modern">
+                  <option value="Yes">Married</option>
+                  <option value="No">Single</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Number of Dependents</label>
+                <select name="dependents" class="form-control-modern">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3+">3+</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Education</label>
+                <select name="education" class="form-control-modern">
+                  <option value="Graduate">Graduate</option>
+                  <option value="Not Graduate">Not Graduate</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Self Employed</label>
+                <select name="self_employed" class="form-control-modern">
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Property Area</label>
+                <select name="property_area" class="form-control-modern">
+                  <option value="Urban">Urban</option>
+                  <option value="Semiurban">Semiurban</option>
+                  <option value="Rural">Rural</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;justify-content:space-between;">
+            <button type="button" class="btn-outline-modern" onclick="goStep(1)">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button type="button" class="btn-primary-modern" onclick="goStep(3)">
+              Next: Financial Details <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Financial Details -->
+        <div class="step-panel" id="panel-3">
+          <h5 style="font-weight:700;margin-bottom:4px;">Financial Information</h5>
+          <p style="color:var(--text-3);font-size:.85rem;margin-bottom:24px;">Your income and loan requirements.</p>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Applicant Monthly Income (₹)</label>
+                <input type="number" name="applicant_income" class="form-control-modern"
+                       placeholder="e.g. 5000" min="0" required id="incomeInput"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Co-Applicant Income (₹)</label>
+                <input type="number" name="coapplicant_income" class="form-control-modern"
+                       placeholder="0 if none" min="0" value="0"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Loan Amount (₹ thousands)</label>
+                <input type="number" name="loan_amount" class="form-control-modern"
+                       placeholder="e.g. 150" min="1" required id="loanInput"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label-modern">Loan Term</label>
+                <select name="loan_amount_term" class="form-control-modern">
+                  <option value="360">360 months (30 yrs)</option>
+                  <option value="300">300 months (25 yrs)</option>
+                  <option value="240">240 months (20 yrs)</option>
+                  <option value="180">180 months (15 yrs)</option>
+                  <option value="120">120 months (10 yrs)</option>
+                  <option value="84">84 months (7 yrs)</option>
+                  <option value="60">60 months (5 yrs)</option>
+                  <option value="36">36 months (3 yrs)</option>
+                  <option value="480">480 months (40 yrs)</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-group">
+                <label class="form-label-modern">Credit History</label>
+                <select name="credit_history" class="form-control-modern">
+                  <option value="1">Good (meets guidelines)</option>
+                  <option value="0">Poor (does not meet guidelines)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live EMI preview -->
+          <div id="emiPreview" style="margin-top:16px;padding:16px;background:var(--primary-light);border-radius:var(--radius-sm);border:1px solid rgba(37,99,235,.15);display:none;">
+            <div style="font-size:.72rem;font-weight:700;color:var(--primary);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">
+              <i class="fa-solid fa-calculator" style="margin-right:6px;"></i>Live EMI Preview
+            </div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+              <div><div style="font-size:1.2rem;font-weight:700;color:var(--primary);" id="previewEmi">—</div><div style="font-size:.7rem;color:var(--text-3);">Monthly EMI</div></div>
+              <div><div style="font-size:1.2rem;font-weight:700;color:var(--text);" id="previewTotal">—</div><div style="font-size:.7rem;color:var(--text-3);">Total Payment</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;justify-content:space-between;">
+            <button type="button" class="btn-outline-modern" onclick="goStep(2)">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button type="button" class="btn-primary-modern" onclick="goStep(4)">
+              Review & Submit <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 4: Review -->
+        <div class="step-panel" id="panel-4">
+          <h5 style="font-weight:700;margin-bottom:4px;">Review & Submit</h5>
+          <p style="color:var(--text-3);font-size:.85rem;margin-bottom:24px;">Please review your application before submitting.</p>
+
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px;margin-bottom:24px;">
+            <div style="font-size:.7rem;font-weight:700;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;">Application Summary</div>
+            <div id="reviewSummary" style="font-size:.85rem;color:var(--text-2);line-height:2;">
+              Please fill in all steps to see summary.
+            </div>
+          </div>
+
+          <div style="background:var(--warning-light);border:1px solid rgba(217,119,6,.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:24px;">
+            <div style="font-size:.8rem;color:var(--warning);display:flex;align-items:flex-start;gap:8px;">
+              <i class="fa-solid fa-triangle-exclamation" style="margin-top:2px;flex-shrink:0;"></i>
+              <span>This is a simulation system for educational purposes only. Results are AI predictions and not actual bank decisions.</span>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;">
+            <button type="button" class="btn-outline-modern" onclick="goStep(3)">
+              <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button type="submit" class="btn-success-modern" style="padding:12px 32px;font-size:.95rem;">
+              <i class="fa-solid fa-paper-plane"></i> Submit Application
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Sidebar Tips -->
+  <div class="col-lg-4">
+    <div class="card-modern mb-4">
+      <div class="section-title" style="margin-bottom:16px;"><i class="fa-solid fa-lightbulb"></i> Tips for Approval</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div style="font-size:.82rem;color:var(--text-2);">Maintain a <strong>good credit history</strong> — it's the #1 factor</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div style="font-size:.82rem;color:var(--text-2);">Keep EMI below <strong>40% of total income</strong></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div style="font-size:.82rem;color:var(--text-2);">Add a <strong>co-applicant</strong> to boost combined income</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--success-light);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <div style="font-size:.82rem;color:var(--text-2);"><strong>Urban/Semiurban</strong> property improves chances</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-modern">
+      <div class="section-title" style="margin-bottom:16px;"><i class="fa-solid fa-shield-halved"></i> Security</div>
+      <p style="font-size:.82rem;color:var(--text-3);margin:0;line-height:1.7;">
+        Your data is processed securely and used only for prediction purposes. No personal data is shared with third parties.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentStep = 1;
+  const totalSteps = 4;
+
+  function goStep(n) {
+    document.getElementById('panel-' + currentStep).classList.remove('active');
+    document.getElementById('step-ind-' + currentStep).classList.remove('active');
+    if (n > currentStep) document.getElementById('step-ind-' + currentStep).classList.add('done');
+    else document.getElementById('step-ind-' + (currentStep)).classList.remove('done');
+    currentStep = n;
+    document.getElementById('panel-' + n).classList.add('active');
+    document.getElementById('step-ind-' + n).classList.add('active');
+    if (n === 4) buildReview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Loan type info toggle
+  document.querySelectorAll('input[name=loan_type]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('[id^=lt-info-]').forEach(d => d.style.display = 'none');
+      document.getElementById('lt-info-' + r.value).style.display = 'block';
+      updateEmiPreview();
+    });
+  });
+
+  // Live EMI preview
+  const RATES = { home: 8.5, personal: 13.5, car: 9.5 };
+  function updateEmiPreview() {
+    const p = parseFloat(document.getElementById('loanInput').value) * 1000;
+    const term = parseInt(document.querySelector('select[name=loan_amount_term]').value);
+    const lt = document.querySelector('input[name=loan_type]:checked').value;
+    const r = RATES[lt] / 12 / 100;
+    if (!p || !term) return;
+    const emi = r > 0 ? (p * r * Math.pow(1+r,term)) / (Math.pow(1+r,term)-1) : p/term;
+    document.getElementById('previewEmi').textContent = '₹' + Math.round(emi).toLocaleString();
+    document.getElementById('previewTotal').textContent = '₹' + Math.round(emi * term).toLocaleString();
+    document.getElementById('emiPreview').style.display = 'block';
+  }
+  document.getElementById('loanInput').addEventListener('input', updateEmiPreview);
+  document.querySelector('select[name=loan_amount_term]').addEventListener('change', updateEmiPreview);
+
+  function buildReview() {
+    const fields = {
+      'Loan Type':    document.querySelector('input[name=loan_type]:checked')?.value || '—',
+      'Gender':       document.querySelector('select[name=gender]')?.value || '—',
+      'Married':      document.querySelector('select[name=married]')?.value || '—',
+      'Dependents':   document.querySelector('select[name=dependents]')?.value || '—',
+      'Education':    document.querySelector('select[name=education]')?.value || '—',
+      'Self Employed':document.querySelector('select[name=self_employed]')?.value || '—',
+      'Property Area':document.querySelector('select[name=property_area]')?.value || '—',
+      'Applicant Income': '₹' + (document.getElementById('incomeInput')?.value || '—'),
+      'Loan Amount':  '₹' + (document.getElementById('loanInput')?.value || '—') + 'K',
+      'Loan Term':    document.querySelector('select[name=loan_amount_term]')?.value + ' months',
+      'Credit History': document.querySelector('select[name=credit_history]')?.value === '1' ? 'Good' : 'Poor',
+    };
+    let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">';
+    for (const [k, v] of Object.entries(fields)) {
+      html += `<div><span style="color:var(--text-3);font-size:.75rem;">${k}</span><div style="font-weight:600;font-size:.85rem;">${v}</div></div>`;
+    }
+    html += '</div>';
+    document.getElementById('reviewSummary').innerHTML = html;
+  }
+</script>
+{% endblock %}

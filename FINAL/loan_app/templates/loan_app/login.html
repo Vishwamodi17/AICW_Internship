@@ -1,0 +1,73 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Sign In – LoanPredict AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 16px;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%; max-width: 420px;
+    box-shadow: var(--shadow-blue);
+    animation: fadeUp .4s ease both;
+  }
+  .input-wrap { position: relative; }
+  .input-wrap .input-icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%); color: var(--text-3); font-size: .9rem;
+    pointer-events: none;
+  }
+  .input-wrap .form-control { padding-left: 36px !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <div style="width:56px;height:56px;border-radius:16px;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:#fff;box-shadow:0 0 24px var(--blue-glow);">
+        <i class="bi bi-cpu-fill"></i>
+      </div>
+      <h4 style="font-weight:800;letter-spacing:-.3px;margin-bottom:4px;">Welcome back</h4>
+      <p style="color:var(--text-2);font-size:.85rem;margin:0;">Sign in to your LoanPredict AI account</p>
+    </div>
+
+    {% if error %}
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:.82rem;color:#fca5a5;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+      <i class="bi bi-exclamation-circle"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <div style="margin-bottom:16px;">
+        <label class="form-label">Username</label>
+        <div class="input-wrap">
+          <i class="bi bi-person input-icon"></i>
+          <input type="text" name="username" class="form-control" placeholder="Your username" required autofocus/>
+        </div>
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" name="password" class="form-control" placeholder="Your password" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:.9rem;">
+        <i class="bi bi-box-arrow-in-right"></i> Sign In
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:20px;font-size:.82rem;color:var(--text-2);">
+      No account? <a href="{% url 'register' %}" style="color:var(--blue-bright);font-weight:600;">Register here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

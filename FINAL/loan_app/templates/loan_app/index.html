@@ -1,0 +1,209 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Apply – LoanPredict AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    padding: 48px 0 32px;
+    text-align: center;
+  }
+  .page-hero h1 {
+    font-size: 2rem; font-weight: 800; letter-spacing: -.5px;
+  }
+  .page-hero p { color: var(--text-2); font-size: .9rem; max-width: 500px; margin: 8px auto 0; }
+
+  /* Loan type grid */
+  .lt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px; margin-bottom: 24px;
+  }
+  .lt-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 8px; text-align: center;
+    cursor: pointer; transition: all .2s;
+    background: var(--navy-2); position: relative;
+  }
+  .lt-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .lt-card.selected {
+    border-color: var(--blue);
+    background: rgba(59,130,246,.08);
+    box-shadow: 0 0 0 2px rgba(59,130,246,.2);
+  }
+  .lt-card .lt-icon { font-size: 1.5rem; display: block; margin-bottom: 6px; }
+  .lt-card .lt-name { font-size: .72rem; font-weight: 700; color: var(--text); display: block; }
+  .lt-card .lt-rate { font-size: .65rem; color: var(--text-3); display: block; margin-top: 1px; }
+  .lt-card .lt-check {
+    position: absolute; top: 6px; right: 6px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    font-size: .55rem; display: none;
+    align-items: center; justify-content: center;
+  }
+  .lt-card.selected .lt-check { display: flex; }
+  .lt-info {
+    background: rgba(59,130,246,.06);
+    border: 1px solid rgba(59,130,246,.15);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: .8rem;
+    color: var(--text-2); margin-bottom: 24px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:12px;">
+      <i class="bi bi-cpu-fill me-1"></i> AI-Powered Prediction
+    </div>
+    <h1 class="text-gradient">Loan Approval Predictor</h1>
+    <p>Fill in your details and our AI model will instantly predict your approval chances.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap mt-3">
+      <span class="badge-info"><i class="bi bi-cpu me-1"></i>Gradient Boosting</span>
+      <span class="badge-approved"><i class="bi bi-shield-check me-1"></i>84.55% Accuracy</span>
+      <span style="background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.25);border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;">
+        <i class="bi bi-lightning me-1"></i>Instant Result
+      </span>
+    </div>
+  </div>
+</div>
+
+<section style="padding:0 0 60px;">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+        <div class="card card-lg">
+
+          <form method="POST" action="{% url 'emi_review' %}" novalidate id="loanForm">
+            {% csrf_token %}
+            {{ form.loan_type }}
+
+            <!-- Loan Type -->
+            <div class="sec-title"><i class="bi bi-grid-1x2-fill"></i> Select Loan Type</div>
+            <div class="lt-grid">
+              {% for key, lt in loan_types.items %}
+              <div class="lt-card {% if forloop.first %}selected{% endif %}"
+                   onclick="selectLoanType('{{ key }}', this)">
+                <div class="lt-check"><i class="bi bi-check"></i></div>
+                <i class="bi {{ lt.icon }} lt-icon" style="color:{{ lt.color }};"></i>
+                <span class="lt-name">{{ lt.label }}</span>
+                <span class="lt-rate">{{ lt.rate }}% p.a.</span>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="lt-info" id="ltInfoBox">
+              <i class="bi bi-house-fill me-2" style="color:{{ loan_types.home.color }};"></i>
+              <strong>Home Loan</strong> — {{ loan_types.home.desc }} · {{ loan_types.home.rate }}% p.a.
+            </div>
+
+            <!-- Personal Info -->
+            <div class="sec-title"><i class="bi bi-person-fill"></i> Personal Information</div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-4">
+                <label class="form-label">{{ form.gender.label }}</label>{{ form.gender }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">{{ form.married.label }}</label>{{ form.married }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">{{ form.dependents.label }}</label>{{ form.dependents }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.education.label }}</label>{{ form.education }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.self_employed.label }}</label>{{ form.self_employed }}
+              </div>
+            </div>
+
+            <!-- Financial Info -->
+            <div class="sec-title"><i class="bi bi-currency-rupee"></i> Financial Information</div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">{{ form.applicant_income.label }}</label>
+                {{ form.applicant_income }}
+                <div style="font-size:.7rem;color:var(--text-3);margin-top:3px;">e.g. ₹50,000 per month</div>
+                {% if form.applicant_income.errors %}<div style="color:#fca5a5;font-size:.75rem;margin-top:4px;">{{ form.applicant_income.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.coapplicant_income.label }}</label>
+                {{ form.coapplicant_income }}
+                <div style="font-size:.7rem;color:var(--text-3);margin-top:3px;">Enter 0 if no co-applicant</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.loan_amount.label }}</label>
+                {{ form.loan_amount }}
+                <div style="font-size:.7rem;color:var(--text-3);margin-top:3px;">e.g. 1500000 for ₹15,00,000</div>
+                {% if form.loan_amount.errors %}<div style="color:#fca5a5;font-size:.75rem;margin-top:4px;">{{ form.loan_amount.errors }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.loan_amount_term.label }}</label>{{ form.loan_amount_term }}
+              </div>
+            </div>
+
+            <!-- Loan Details -->
+            <div class="sec-title"><i class="bi bi-house-fill"></i> Loan Details</div>
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">{{ form.credit_history.label }}</label>{{ form.credit_history }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">{{ form.property_area.label }}</label>{{ form.property_area }}
+              </div>
+            </div>
+
+            <div class="text-center mt-4">
+              <button type="submit" class="btn-primary btn-lg">
+                <i class="bi bi-send-fill"></i> Predict Loan Approval
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Stats row -->
+        <div class="row g-3 mt-4">
+          <div class="col-md-4">
+            <div class="card text-center" style="padding:16px;">
+              <i class="bi bi-database-fill-check" style="font-size:1.6rem;color:var(--blue-bright);margin-bottom:6px;display:block;"></i>
+              <div style="font-size:.78rem;color:var(--text-2);font-weight:600;">614 training samples</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-center" style="padding:16px;">
+              <i class="bi bi-bar-chart-fill" style="font-size:1.6rem;color:var(--green-bright);margin-bottom:6px;display:block;"></i>
+              <div style="font-size:.78rem;color:var(--text-2);font-weight:600;">15 engineered features</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-center" style="padding:16px;">
+              <i class="bi bi-gear-wide-connected" style="font-size:1.6rem;color:var(--amber);margin-bottom:6px;display:block;"></i>
+              <div style="font-size:.78rem;color:var(--text-2);font-weight:600;">RandomizedSearchCV tuned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const LOAN_TYPES = {
+    {% for key, lt in loan_types.items %}
+    "{{ key }}": { label:"{{ lt.label }}", rate:{{ lt.rate }}, icon:"{{ lt.icon }}", color:"{{ lt.color }}", desc:"{{ lt.desc }}" },
+    {% endfor %}
+  };
+  function selectLoanType(key, card) {
+    document.getElementById('id_loan_type').value = key;
+    document.querySelectorAll('.lt-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const lt = LOAN_TYPES[key];
+    document.getElementById('ltInfoBox').innerHTML =
+      `<i class="bi ${lt.icon} me-2" style="color:${lt.color};"></i><strong>${lt.label}</strong> — ${lt.desc} · ${lt.rate}% p.a.`;
+  }
+</script>
+{% endblock %}
+

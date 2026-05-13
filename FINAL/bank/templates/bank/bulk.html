@@ -1,0 +1,90 @@
+{% extends 'bank/base.html' %}
+{% block title %}Bulk Prediction – LoanAI{% endblock %}
+{% block page_title %}Bulk CSV Prediction{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card-modern mb-4">
+      <div class="section-title" style="margin-bottom:20px;"><i class="fa-solid fa-upload"></i> Upload CSV File</div>
+      <form method="POST" enctype="multipart/form-data" novalidate data-loading>
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label-modern">Select CSV File</label>
+          <input type="file" name="csv_file" class="form-control-modern" accept=".csv" required
+                 style="padding:10px 14px;cursor:pointer;"/>
+        </div>
+        <button type="submit" class="btn-primary-modern" style="width:100%;justify-content:center;padding:12px;">
+          <i class="fa-solid fa-microchip"></i> Run Bulk Prediction
+        </button>
+      </form>
+    </div>
+
+    <div class="card-modern">
+      <div class="section-title" style="margin-bottom:12px;"><i class="fa-solid fa-file-code"></i> CSV Format</div>
+      <p style="font-size:.78rem;color:var(--text-3);margin-bottom:10px;">Required columns:</p>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;font-family:monospace;font-size:.72rem;color:var(--text-2);overflow-x:auto;line-height:1.8;">
+        name, gender, married, dependents, education,<br>
+        self_employed, applicant_income, coapplicant_income,<br>
+        loan_amount, loan_amount_term, credit_history,<br>
+        property_area, loan_type
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--primary-light);border-radius:var(--radius-sm);">
+        <div style="font-size:.72rem;color:var(--primary);font-weight:600;margin-bottom:4px;">Sample Row:</div>
+        <div style="font-family:monospace;font-size:.68rem;color:var(--text-2);">
+          John,Male,Yes,0,Graduate,No,5000,2000,150,360,1,Urban,home
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    {% if results %}
+    <div class="card-modern">
+      <div class="section-title" style="margin-bottom:16px;">
+        <i class="fa-solid fa-table"></i> Results ({{ results|length }} records)
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="table-modern">
+          <thead>
+            <tr><th>Name</th><th>Result</th><th>Approval %</th><th>Monthly EMI</th></tr>
+          </thead>
+          <tbody>
+            {% for r in results %}
+            <tr>
+              <td style="font-weight:600;">{{ r.name }}</td>
+              <td>
+                {% if r.result == 'Approved' %}
+                  <span class="badge-approved"><i class="fa-solid fa-check" style="margin-right:3px;"></i>Approved</span>
+                {% elif r.result == 'Rejected' %}
+                  <span class="badge-rejected"><i class="fa-solid fa-xmark" style="margin-right:3px;"></i>Rejected</span>
+                {% else %}
+                  <span style="color:var(--warning);font-size:.78rem;">Error</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="progress-modern" style="width:80px;">
+                    <div class="progress-fill {% if r.result == 'Approved' %}progress-fill-success{% else %}progress-fill-danger{% endif %}"
+                         data-width="{{ r.approved_prob }}"></div>
+                  </div>
+                  <span style="font-size:.8rem;font-weight:600;">{{ r.approved_prob }}%</span>
+                </div>
+              </td>
+              <td style="font-weight:600;color:var(--primary);">₹{{ r.emi|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card-modern" style="text-align:center;padding:60px 24px;">
+      <i class="fa-solid fa-file-arrow-up" style="font-size:3rem;color:var(--text-4);margin-bottom:16px;display:block;"></i>
+      <h6 style="font-weight:600;color:var(--text-2);margin-bottom:8px;">No results yet</h6>
+      <p style="color:var(--text-3);font-size:.85rem;margin:0;">Upload a CSV file to run bulk predictions on multiple applicants.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

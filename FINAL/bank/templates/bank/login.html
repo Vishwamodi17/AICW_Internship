@@ -1,0 +1,79 @@
+{% extends 'bank/base.html' %}
+{% block title %}Sign In – LoanAI{% endblock %}
+{% block page_title %}Sign In{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 16px;
+    background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  }
+  [data-theme="dark"] .auth-wrap { background: linear-gradient(135deg, #0f172a, #1e1b4b); }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    padding: 40px; width: 100%; max-width: 420px;
+  }
+  .auth-logo {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.3rem; margin: 0 auto 20px;
+  }
+  .input-group-modern { position: relative; }
+  .input-group-modern .input-icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%); color: var(--text-4); font-size: .9rem;
+    pointer-events: none;
+  }
+  .input-group-modern .form-control-modern { padding-left: 36px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap" style="margin:-28px -28px 0;">
+  <div class="auth-card">
+    <div class="text-center">
+      <div class="auth-logo"><i class="fa-solid fa-brain"></i></div>
+      <h4 style="font-weight:800;color:var(--text);margin-bottom:4px;">Welcome back</h4>
+      <p style="color:var(--text-3);font-size:.85rem;margin-bottom:28px;">Sign in to your LoanAI account</p>
+    </div>
+
+    {% if error %}
+    <div class="alert-modern alert-danger-modern mb-4">
+      <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label-modern">Username</label>
+        <div class="input-group-modern">
+          <i class="fa-solid fa-user input-icon"></i>
+          <input type="text" name="username" class="form-control-modern"
+                 placeholder="Your username" required autofocus/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label-modern">Password</label>
+        <div class="input-group-modern">
+          <i class="fa-solid fa-lock input-icon"></i>
+          <input type="password" name="password" class="form-control-modern"
+                 placeholder="Your password" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary-modern" style="width:100%;justify-content:center;padding:13px;font-size:.95rem;margin-top:8px;">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:20px;font-size:.85rem;color:var(--text-3);">
+      No account?
+      <a href="{% url 'bank_register' %}" style="color:var(--primary);font-weight:600;">Register here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

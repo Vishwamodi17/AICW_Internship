@@ -1,0 +1,355 @@
+{% extends 'bank/base.html' %}
+{% block title %}LoanAI – Smart Loan Eligibility Checker{% endblock %}
+{% block page_title %}Home{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center;
+    background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 50%, #fdf2f8 100%);
+    padding: 60px 0;
+    position: relative; overflow: hidden;
+  }
+  [data-theme="dark"] .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1a0a2e 100%);
+  }
+  .hero::before {
+    content: ''; position: absolute;
+    width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(37,99,235,.08), transparent 70%);
+    top: -100px; right: -100px; pointer-events: none;
+  }
+  .hero-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800; line-height: 1.15;
+    color: var(--text);
+  }
+  .hero-title span {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.05rem; color: var(--text-3);
+    max-width: 520px; margin-top: 16px; line-height: 1.7;
+  }
+  .hero-cta { margin-top: 32px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary-light); color: var(--primary);
+    border: 1px solid rgba(37,99,235,.2); border-radius: 20px;
+    padding: 5px 14px; font-size: .78rem; font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .hero-visual {
+    background: var(--surface); border-radius: 20px;
+    box-shadow: var(--shadow-lg); padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 24px;
+    text-align: center; transition: transform .25s, box-shadow .25s, border-color .25s;
+    height: 100%;
+  }
+  .feature-card:hover {
+    transform: translateY(-6px); box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+  }
+  .feature-icon {
+    width: 60px; height: 60px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin: 0 auto 16px;
+  }
+  .loan-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+    cursor: pointer;
+  }
+  .loan-card:hover {
+    transform: translateY(-4px); box-shadow: var(--shadow);
+    border-color: var(--primary);
+  }
+  .loan-rate {
+    font-size: 2rem; font-weight: 800; color: var(--primary);
+    line-height: 1;
+  }
+  .stat-strip {
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); padding: 40px 0;
+  }
+  .stat-strip-num {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .model-pill {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .model-pill:last-child { margin-bottom: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero" style="margin:-28px -28px 0;padding:60px 28px;">
+  <div class="container-fluid">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="hero-badge">
+          <i class="fa-solid fa-circle-check"></i> AI-Powered · 86.18% Accuracy · Real-time
+        </div>
+        <h1 class="hero-title">
+          Smart Loan<br><span>Eligibility Checker</span>
+        </h1>
+        <p class="hero-sub">
+          AI-powered system to predict and improve your loan approval chances.
+          Get instant decisions with explainable AI, EMI calculations, and personalised insights.
+        </p>
+        <div class="hero-cta">
+          {% if user.is_authenticated %}
+          <a href="{% url 'bank_apply' %}" class="btn-primary-modern" style="padding:13px 32px;font-size:.95rem;">
+            <i class="fa-solid fa-file-circle-plus"></i> Check Eligibility
+          </a>
+          <a href="{% url 'bank_dashboard' %}" class="btn-outline-modern" style="padding:12px 30px;font-size:.95rem;">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+          </a>
+          {% else %}
+          <a href="{% url 'bank_register' %}" class="btn-primary-modern" style="padding:13px 32px;font-size:.95rem;">
+            <i class="fa-solid fa-rocket"></i> Get Started Free
+          </a>
+          <a href="{% url 'bank_login' %}" class="btn-outline-modern" style="padding:12px 30px;font-size:.95rem;">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+          </a>
+          {% endif %}
+        </div>
+        <div style="margin-top:28px;display:flex;gap:24px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text-3);">
+            <i class="fa-solid fa-shield-halved" style="color:var(--success);"></i> Secure & Private
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text-3);">
+            <i class="fa-solid fa-bolt" style="color:var(--warning);"></i> Instant Results
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text-3);">
+            <i class="fa-solid fa-brain" style="color:var(--primary);"></i> Explainable AI
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-block">
+        <div class="hero-visual">
+          <div style="font-size:.7rem;font-weight:700;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;">
+            Live Prediction Preview
+          </div>
+          <!-- Mock result card -->
+          <div style="background:var(--success-light);border:1.5px solid rgba(22,163,74,.25);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:var(--success);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;color:var(--success);font-size:1rem;">Loan Approved</div>
+                <div style="font-size:.72rem;color:var(--text-3);">Home Loan · ₹150K</div>
+              </div>
+              <div style="margin-left:auto;font-size:1.6rem;font-weight:800;color:var(--success);">87%</div>
+            </div>
+            <div style="font-size:.72rem;color:var(--text-3);margin-bottom:6px;">Approval Probability</div>
+            <div class="progress-modern">
+              <div class="progress-fill progress-fill-success" style="width:87%;"></div>
+            </div>
+          </div>
+          <!-- Mock factors -->
+          <div style="font-size:.72rem;font-weight:700;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Key Factors</div>
+          {% for factor in "Credit History,Total Income,Property Area"|split:"," %}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--success);flex-shrink:0;"></div>
+            <div style="font-size:.82rem;color:var(--text-2);flex:1;">{{ factor }}</div>
+            <div style="font-size:.72rem;font-weight:600;color:var(--success);">Positive</div>
+          </div>
+          {% endfor %}
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+            <div style="text-align:center;">
+              <div style="font-size:1.1rem;font-weight:700;color:var(--primary);">₹8,240</div>
+              <div style="font-size:.68rem;color:var(--text-3);">Monthly EMI</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">8.5%</div>
+              <div style="font-size:.68rem;color:var(--text-3);">Interest Rate</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text);">360</div>
+              <div style="font-size:.68rem;color:var(--text-3);">Months</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Strip -->
+<section class="stat-strip" style="margin:0 -28px;">
+  <div class="container-fluid px-4">
+    <div class="row text-center g-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-strip-num">86.18%</div>
+        <div style="font-size:.78rem;color:var(--text-3);font-weight:500;margin-top:4px;">Model Accuracy</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-strip-num">3</div>
+        <div style="font-size:.78rem;color:var(--text-3);font-weight:500;margin-top:4px;">ML Models</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-strip-num">15</div>
+        <div style="font-size:.78rem;color:var(--text-3);font-weight:500;margin-top:4px;">Features Analysed</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-strip-num">&lt;1s</div>
+        <div style="font-size:.78rem;color:var(--text-3);font-weight:500;margin-top:4px;">Prediction Time</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section style="padding:60px 0;">
+  <div class="text-center mb-5">
+    <div class="hero-badge" style="margin-bottom:12px;">Features</div>
+    <h2 style="font-size:1.8rem;font-weight:800;color:var(--text);">Everything you need to make smart loan decisions</h2>
+    <p style="color:var(--text-3);max-width:500px;margin:10px auto 0;">Powered by machine learning with full transparency and explainability.</p>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--primary-light);color:var(--primary);">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">Fast Prediction</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">Get instant loan approval prediction in under 1 second using our trained ML model.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--success-light);color:var(--success);">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">Explainable AI</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">Understand exactly why your loan was approved or rejected with factor-wise analysis.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--warning-light);color:var(--warning);">
+          <i class="fa-solid fa-calculator"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">EMI Calculator</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">Calculate your monthly EMI, total payment, and interest breakdown instantly.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(124,58,237,.1);color:#7c3aed;">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">What-If Analysis</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">See how changing income or loan amount affects your approval probability.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(236,72,153,.1);color:#ec4899;">
+          <i class="fa-solid fa-chart-pie"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">Data Visualisation</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">Interactive charts showing approval trends, income distribution, and model performance.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(20,184,166,.1);color:#14b8a6;">
+          <i class="fa-solid fa-file-arrow-up"></i>
+        </div>
+        <h6 style="font-weight:700;margin-bottom:8px;">Bulk Prediction</h6>
+        <p style="font-size:.85rem;color:var(--text-3);margin:0;">Upload a CSV file to predict loan approval for multiple applicants at once.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Loan Types -->
+<section style="padding:0 0 60px;">
+  <div class="text-center mb-5">
+    <div class="hero-badge" style="margin-bottom:12px;">Loan Products</div>
+    <h2 style="font-size:1.8rem;font-weight:800;color:var(--text);">Choose your loan type</h2>
+  </div>
+  <div class="row g-4">
+    {% for key, lt in loan_types.items %}
+    <div class="col-md-4">
+      <div class="loan-card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:48px;height:48px;border-radius:12px;background:{% if key == 'home' %}var(--primary-light){% elif key == 'personal' %}rgba(124,58,237,.1){% else %}var(--success-light){% endif %};display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:{% if key == 'home' %}var(--primary){% elif key == 'personal' %}#7c3aed{% else %}var(--success){% endif %};">
+            <i class="fa-solid {% if key == 'home' %}fa-house{% elif key == 'personal' %}fa-user{% else %}fa-car{% endif %}"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">{{ lt.label }}</div>
+            <div style="font-size:.72rem;color:var(--text-3);">Up to {{ lt.max_term }} months</div>
+          </div>
+        </div>
+        <div class="loan-rate">{{ lt.rate }}%</div>
+        <div style="font-size:.72rem;color:var(--text-3);margin-bottom:12px;">per annum</div>
+        <p style="font-size:.82rem;color:var(--text-3);margin-bottom:16px;">{{ lt.description }}</p>
+        <div style="font-size:.75rem;color:var(--text-3);">
+          <i class="fa-solid fa-circle-info" style="color:var(--primary);margin-right:4px;"></i>
+          Min income: ₹{{ lt.min_income|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Model Performance -->
+<section style="padding:0 0 60px;">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-5">
+      <div class="hero-badge" style="margin-bottom:12px;">ML Engine</div>
+      <h2 style="font-size:1.6rem;font-weight:800;color:var(--text);margin-bottom:12px;">3 models, 1 best decision</h2>
+      <p style="color:var(--text-3);font-size:.9rem;line-height:1.7;">
+        We train Logistic Regression, Decision Tree, and Random Forest on real loan data.
+        The best-performing model is automatically selected for your prediction.
+      </p>
+      <a href="{% url 'bank_models' %}" class="btn-outline-modern" style="margin-top:20px;">
+        <i class="fa-solid fa-chart-bar"></i> View Full Comparison
+      </a>
+    </div>
+    <div class="col-lg-7">
+      <div class="card-modern">
+        {% for name, res in all_results.items %}
+        <div class="model-pill">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:{% if res.accuracy >= 85 %}var(--success){% else %}var(--primary){% endif %};"></div>
+            <span style="font-weight:600;font-size:.88rem;">{{ name }}</span>
+            {% if res.accuracy == all_results.values|dictsort:"accuracy"|last.accuracy %}
+            <span class="badge-primary" style="font-size:.65rem;">Best</span>
+            {% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="text-align:right;">
+              <div style="font-size:.7rem;color:var(--text-3);">CV Score</div>
+              <div style="font-weight:600;font-size:.85rem;">{{ res.cv_score }}%</div>
+            </div>
+            <div style="text-align:right;min-width:60px;">
+              <div style="font-size:.7rem;color:var(--text-3);">Accuracy</div>
+              <div style="font-weight:800;font-size:1rem;color:{% if res.accuracy >= 85 %}var(--success){% else %}var(--primary){% endif %};">{{ res.accuracy }}%</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}Register – LoanPredict AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .auth-wrap {
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 16px;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%; max-width: 440px;
+    box-shadow: var(--shadow-blue);
+    animation: fadeUp .4s ease both;
+  }
+  .input-wrap { position: relative; }
+  .input-wrap .input-icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%); color: var(--text-3); font-size: .9rem;
+    pointer-events: none;
+  }
+  .input-wrap .form-control { padding-left: 36px !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <div style="width:56px;height:56px;border-radius:16px;background:var(--grad-blue);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.4rem;color:#fff;box-shadow:0 0 24px var(--blue-glow);">
+        <i class="bi bi-person-plus-fill"></i>
+      </div>
+      <h4 style="font-weight:800;letter-spacing:-.3px;margin-bottom:4px;">Create your account</h4>
+      <p style="color:var(--text-2);font-size:.85rem;margin:0;">Join LoanPredict AI and check your loan eligibility</p>
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:.82rem;color:#fca5a5;margin-bottom:16px;">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <div style="margin-bottom:16px;">
+        <label class="form-label">Username</label>
+        <div class="input-wrap">
+          <i class="bi bi-person input-icon"></i>
+          <input type="text" name="username" class="form-control" placeholder="Choose a username"
+                 value="{{ form.username.value|default:'' }}" required/>
+        </div>
+        {% if form.username.errors %}<div style="color:#fca5a5;font-size:.75rem;margin-top:4px;">{{ form.username.errors.0 }}</div>{% endif %}
+      </div>
+      <div style="margin-bottom:16px;">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" name="password1" class="form-control" placeholder="Create a strong password" required/>
+        </div>
+        {% if form.password1.errors %}<div style="color:#fca5a5;font-size:.75rem;margin-top:4px;">{{ form.password1.errors.0 }}</div>{% endif %}
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label">Confirm Password</label>
+        <div class="input-wrap">
+          <i class="bi bi-lock-fill input-icon"></i>
+          <input type="password" name="password2" class="form-control" placeholder="Repeat your password" required/>
+        </div>
+        {% if form.password2.errors %}<div style="color:#fca5a5;font-size:.75rem;margin-top:4px;">{{ form.password2.errors.0 }}</div>{% endif %}
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:.9rem;">
+        <i class="bi bi-person-check"></i> Create Account
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:20px;font-size:.82rem;color:var(--text-2);">
+      Already have an account? <a href="{% url 'login' %}" style="color:var(--blue-bright);font-weight:600;">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

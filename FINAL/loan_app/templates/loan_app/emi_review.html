@@ -1,0 +1,451 @@
+{% extends 'loan_app/base.html' %}
+{% block title %}EMI Review – LoanPredict AI{% endblock %}
+
+{% block extra_css %}
+<style>
+  .review-hero {
+    padding: 40px 0 28px;
+    text-align: center;
+  }
+
+  /* Step indicator */
+  .steps-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-bottom: 36px;
+  }
+  .step-dot {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    position: relative;
+  }
+  .step-dot .dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 700; z-index: 1;
+  }
+  .step-dot .dot.done  { background: var(--green); color: #fff; }
+  .step-dot .dot.active{ background: var(--blue);  color: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,.2); }
+  .step-dot .dot.todo  { background: var(--navy-3); color: var(--text-3); border: 1px solid var(--border); }
+  .step-dot .lbl { font-size: .68rem; font-weight: 600; color: var(--text-3); white-space: nowrap; }
+  .step-dot .lbl.active-lbl { color: var(--blue-bright); }
+  .step-line {
+    width: 80px; height: 2px;
+    background: var(--border); margin-bottom: 22px;
+  }
+  .step-line.done { background: var(--green); }
+
+  /* EMI big display */
+  .emi-hero-card {
+    background: linear-gradient(135deg, rgba(59,130,246,.1), rgba(16,185,129,.06));
+    border: 1px solid rgba(59,130,246,.25);
+    border-radius: var(--radius-lg);
+    padding: 36px 28px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .emi-hero-card::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(59,130,246,.06); pointer-events: none;
+  }
+  .emi-amount {
+    font-size: 3.2rem; font-weight: 900; line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--blue-bright);
+  }
+  .emi-label { font-size: .82rem; color: var(--text-2); margin-top: 6px; }
+
+  /* Stat trio */
+  .stat-trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 12px; text-align: center;
+  }
+  .stat-box .val { font-size: 1.1rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  .stat-box .lbl { font-size: .65rem; color: var(--text-3); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* EMI ratio bar */
+  .ratio-bar-wrap {
+    background: var(--navy-3); border-radius: 50px; height: 10px; overflow: hidden;
+  }
+  .ratio-bar-fill {
+    height: 100%; border-radius: 50px;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Breakdown donut placeholder */
+  .donut-wrap { position: relative; height: 200px; }
+
+  /* Summary table */
+  .summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border-2);
+    font-size: .85rem;
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-key { color: var(--text-2); font-weight: 500; }
+  .summary-val { font-weight: 600; color: var(--text); }
+
+  /* CTA buttons */
+  .cta-row {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    justify-content: center; margin-top: 28px;
+  }
+  .btn-confirm {
+    background: linear-gradient(135deg, var(--green), #15803d);
+    border: none; border-radius: var(--radius-sm);
+    padding: 13px 36px; font-size: 1rem; font-weight: 700;
+    color: #fff; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 8px; text-decoration: none;
+    box-shadow: 0 4px 20px var(--green-glow);
+    transition: all .2s;
+  }
+  .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--green-glow); color: #fff; }
+  .btn-back {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 28px;
+    font-size: .9rem; font-weight: 600; color: var(--text-2);
+    cursor: pointer; display: inline-flex; align-items: center;
+    gap: 8px; text-decoration: none; transition: all .2s;
+  }
+  .btn-back:hover { border-color: var(--blue); color: var(--blue-bright); }
+
+  /* Warning badge */
+  .ratio-warning {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    font-size: .82rem; font-weight: 500; margin-top: 12px;
+  }
+  .ratio-ok   { background: rgba(16,185,129,.08); color: var(--green-bright); border: 1px solid rgba(16,185,129,.2); }
+  .ratio-warn { background: rgba(245,158,11,.08); color: var(--amber);        border: 1px solid rgba(245,158,11,.2); }
+  .ratio-bad  { background: rgba(239,68,68,.08);  color: #fca5a5;             border: 1px solid rgba(239,68,68,.2); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Step indicator -->
+<div class="review-hero">
+  <div class="container">
+    <div class="steps-bar">
+      <div class="step-dot">
+        <div class="dot done"><i class="bi bi-check"></i></div>
+        <div class="lbl">Application</div>
+      </div>
+      <div class="step-line done"></div>
+      <div class="step-dot">
+        <div class="dot active">2</div>
+        <div class="lbl active-lbl">EMI Review</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-dot">
+        <div class="dot todo">3</div>
+        <div class="lbl">Prediction</div>
+      </div>
+    </div>
+
+    <div class="hero-badge" style="margin-bottom:12px;">
+      <i class="bi bi-calculator me-1"></i> Step 2 of 3 — Review Your EMI
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:800;letter-spacing:-.5px;" class="text-gradient">
+      EMI Breakdown for {{ applicant_name }}
+    </h1>
+    <p style="color:var(--text-2);font-size:.9rem;margin-top:8px;">
+      Review your estimated monthly repayment before we run the AI prediction.
+    </p>
+  </div>
+</div>
+
+<section style="padding:0 0 60px;">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+
+      <!-- Left: EMI Details -->
+      <div class="col-lg-6">
+
+        <!-- Loan type badge -->
+        <div style="margin-bottom:16px;">
+          <span style="display:inline-flex;align-items:center;gap:7px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:20px;padding:5px 16px;font-size:.8rem;font-weight:700;color:var(--blue-bright);">
+            <i class="bi {{ loan_type.icon }}"></i>
+            {{ loan_type.label }} &nbsp;·&nbsp; {{ loan_type.rate }}% p.a.
+          </span>
+        </div>
+
+        <!-- Big EMI card -->
+        <div class="emi-hero-card mb-4">
+          <div style="font-size:.7rem;font-weight:800;color:var(--text-3);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
+            Monthly EMI
+          </div>
+          <div class="emi-amount">{{ emi.fmt_emi }}</div>
+          <div class="emi-label">
+            at {{ emi.rate }}% p.a. for {{ emi.months }} months
+          </div>
+        </div>
+
+        <!-- Stat trio -->
+        <div class="stat-trio mb-4">
+          <div class="stat-box">
+            <div class="val" style="color:var(--blue-bright);">{{ emi.fmt_principal }}</div>
+            <div class="lbl">Principal</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" style="color:var(--amber);">{{ emi.fmt_interest }}</div>
+            <div class="lbl">Total Interest</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" style="color:var(--purple);">{{ emi.fmt_total }}</div>
+            <div class="lbl">Total Payment</div>
+          </div>
+        </div>
+
+        <!-- EMI to Income ratio -->
+        <div class="card" style="padding:20px;">
+          <div class="sec-title"><i class="bi bi-bar-chart-fill"></i> EMI vs Income Ratio</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:.82rem;color:var(--text-2);">Monthly EMI as % of income</span>
+            <span style="font-size:.9rem;font-weight:800;
+              color:{% if emi.emi_ratio <= 30 %}var(--green-bright){% elif emi.emi_ratio <= 50 %}var(--amber){% else %}#fca5a5{% endif %};">
+              {{ emi.emi_ratio }}%
+            </span>
+          </div>
+          <div class="ratio-bar-wrap">
+            <div class="ratio-bar-fill"
+                 style="width:{{ emi.emi_ratio }}%;
+                        background:{% if emi.emi_ratio <= 30 %}var(--green){% elif emi.emi_ratio <= 50 %}var(--amber){% else %}var(--red){% endif %};">
+            </div>
+          </div>
+          {% if emi.emi_ratio <= 30 %}
+          <div class="ratio-warning ratio-ok">
+            <i class="bi bi-check-circle-fill"></i>
+            Excellent! EMI is only {{ emi.emi_ratio }}% of income — well within the safe 40% limit.
+          </div>
+          {% elif emi.emi_ratio <= 50 %}
+          <div class="ratio-warning ratio-warn">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            EMI is {{ emi.emi_ratio }}% of income — slightly high. Lenders prefer below 40%.
+          </div>
+          {% else %}
+          <div class="ratio-warning ratio-bad">
+            <i class="bi bi-x-circle-fill"></i>
+            EMI is {{ emi.emi_ratio }}% of income — exceeds safe limit. Consider reducing loan amount or extending tenure.
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Donut chart -->
+        <div class="card mt-4" style="padding:20px;">
+          <div class="sec-title"><i class="bi bi-pie-chart-fill"></i> Payment Breakdown</div>
+          <div class="donut-wrap">
+            <canvas id="emiDonut"></canvas>
+          </div>
+          <div style="display:flex;justify-content:center;gap:24px;margin-top:12px;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-2);">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--blue);"></div> Principal
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-2);">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--amber);"></div> Interest
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Summary + Confirm -->
+      <div class="col-lg-5">
+
+        <!-- Application summary -->
+        <div class="card mb-4">
+          <div class="sec-title"><i class="bi bi-clipboard-data"></i> Application Summary</div>
+          <div class="summary-row"><span class="summary-key">Loan Type</span><span class="summary-val">{{ loan_type.label }}</span></div>
+          <div class="summary-row"><span class="summary-key">Loan Amount</span><span class="summary-val">{{ emi.fmt_principal }}</span></div>
+          <div class="summary-row"><span class="summary-key">Loan Term</span><span class="summary-val">{{ form_data.loan_amount_term }} months</span></div>
+          <div class="summary-row"><span class="summary-key">Interest Rate</span><span class="summary-val">{{ loan_type.rate }}% p.a.</span></div>
+          <div class="summary-row"><span class="summary-key">Monthly EMI</span><span class="summary-val" style="color:var(--blue-bright);font-size:.95rem;">{{ emi.fmt_emi }}</span></div>
+          <div class="summary-row"><span class="summary-key">Total Payment</span><span class="summary-val">{{ emi.fmt_total }}</span></div>
+          <div class="summary-row"><span class="summary-key">Total Interest</span><span class="summary-val" style="color:var(--amber);">{{ emi.fmt_interest }}</span></div>
+          <div class="summary-row"><span class="summary-key">Applicant Income</span><span class="summary-val">{{ emi.fmt_income }}</span></div>
+          <div class="summary-row"><span class="summary-key">Credit History</span><span class="summary-val">{% if form_data.credit_history == '1' %}Good ✓{% else %}Poor ✗{% endif %}</span></div>
+          <div class="summary-row"><span class="summary-key">Property Area</span><span class="summary-val">{{ form_data.property_area }}</span></div>
+          <div class="summary-row"><span class="summary-key">Education</span><span class="summary-val">{{ form_data.education }}</span></div>
+        </div>
+
+        <!-- What happens next -->
+        <div class="card mb-4" style="background:rgba(59,130,246,.04);border-color:rgba(59,130,246,.15);">
+          <div class="sec-title"><i class="bi bi-cpu-fill"></i> What Happens Next</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:8px;background:rgba(59,130,246,.12);color:var(--blue-bright);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+                <i class="bi bi-cpu"></i>
+              </div>
+              <div style="font-size:.82rem;color:var(--text-2);">Our <strong>Gradient Boosting model</strong> analyses your 15 financial features</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:8px;background:rgba(16,185,129,.12);color:var(--green-bright);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+                <i class="bi bi-graph-up-arrow"></i>
+              </div>
+              <div style="font-size:.82rem;color:var(--text-2);">You get an <strong>approval probability score</strong> with explainable reasons</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,158,11,.12);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">
+                <i class="bi bi-receipt"></i>
+              </div>
+              <div style="font-size:.82rem;color:var(--text-2);">A <strong>printable receipt</strong> is generated with your decision details</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hidden form to submit to predict — uses raw POST values -->
+        <form method="POST" action="{% url 'predict' %}" id="confirmForm">
+          {% csrf_token %}
+          {% for key, value in post_data.items %}
+            {% if key != 'csrfmiddlewaretoken' %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+          {% endfor %}
+        </form>
+
+        <!-- Rejection warning if ratio is red -->
+        {% if emi.emi_ratio > 50 %}
+        <div style="background:rgba(239,68,68,.08);border:1.5px solid rgba(239,68,68,.35);border-radius:var(--radius);padding:20px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fca5a5;flex-shrink:0;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:.95rem;color:#fca5a5;">High Rejection Risk</div>
+              <div style="font-size:.78rem;color:var(--text-3);">EMI ratio {{ emi.emi_ratio }}% exceeds the safe 50% threshold</div>
+            </div>
+          </div>
+          <p style="font-size:.82rem;color:var(--text-2);margin-bottom:12px;">
+            Based on your EMI-to-income ratio of <strong style="color:#fca5a5;">{{ emi.emi_ratio }}%</strong>,
+            your loan application is <strong style="color:#fca5a5;">very likely to be rejected</strong>.
+            Lenders typically reject applications where EMI exceeds 40–50% of monthly income.
+          </p>
+          <div style="font-size:.8rem;font-weight:700;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">
+            How to fix this:
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--text-2);">
+              <i class="bi bi-arrow-down-circle-fill" style="color:var(--amber);flex-shrink:0;margin-top:1px;"></i>
+              Reduce loan amount (currently {{ emi.fmt_principal }})
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--text-2);">
+              <i class="bi bi-calendar-plus-fill" style="color:var(--amber);flex-shrink:0;margin-top:1px;"></i>
+              Extend loan tenure to reduce monthly EMI
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--text-2);">
+              <i class="bi bi-person-plus-fill" style="color:var(--amber);flex-shrink:0;margin-top:1px;"></i>
+              Add a co-applicant to increase total income
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- CTA -->
+        <div class="cta-row">
+          <a href="{% url 'apply' %}" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            {% if emi.emi_ratio > 50 %}Fix Application{% else %}Edit Application{% endif %}
+          </a>
+
+          <button type="submit" form="confirmForm" class="btn-confirm">
+            <i class="bi bi-cpu-fill"></i> Confirm & Get Prediction
+          </button>
+        </div>
+
+        <p style="text-align:center;font-size:.72rem;color:var(--text-3);margin-top:16px;">
+          <i class="bi bi-info-circle me-1"></i>
+          This is a simulation. Results are AI predictions, not actual bank decisions.
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Indian number formatter
+  function fmtINR(n) {
+    n = Math.round(n);
+    const s = n.toString();
+    if (s.length <= 3) return '₹' + s;
+    const last3 = s.slice(-3);
+    let rest = s.slice(0, -3);
+    const parts = [];
+    while (rest.length > 2) { parts.unshift(rest.slice(-2)); rest = rest.slice(0, -2); }
+    if (rest) parts.unshift(rest);
+    return '₹' + parts.join(',') + ',' + last3;
+  }
+
+  // Donut chart
+  new Chart(document.getElementById('emiDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Principal', 'Interest'],
+      datasets: [{
+        data: [{{ emi.principal|floatformat:0 }}, {{ emi.total_interest|floatformat:0 }}],
+        backgroundColor: ['rgba(59,130,246,0.85)', 'rgba(245,158,11,0.85)'],
+        borderWidth: 0,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      cutout: '68%',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${fmtINR(ctx.raw)}`
+          }
+        }
+      }
+    }
+  });
+
+  // Animate ratio bar
+  document.addEventListener('DOMContentLoaded', () => {
+    const bar = document.querySelector('.ratio-bar-fill');
+    if (bar) {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => bar.style.width = w, 300);
+    }
+  });
+
+  function showRejectionAlert() {
+    const box = document.createElement('div');
+    box.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:var(--surface);border:1.5px solid rgba(239,68,68,.4);
+      border-radius:16px;padding:28px 32px;max-width:400px;width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:9999;text-align:center;
+    `;
+    box.innerHTML = `
+      <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+      <div style="font-weight:800;font-size:1rem;color:#fca5a5;margin-bottom:8px;">Loan Likely to be Rejected</div>
+      <p style="font-size:.85rem;color:var(--text-2);margin-bottom:20px;">
+        Your EMI-to-income ratio of <strong style="color:#fca5a5;">{{ emi.emi_ratio }}%</strong>
+        is too high. Please go back and reduce the loan amount or extend the tenure.
+      </p>
+      <button onclick="this.parentElement.remove()"
+              style="background:var(--grad-blue);border:none;border-radius:8px;padding:9px 24px;color:#fff;font-weight:600;cursor:pointer;">
+        OK, I'll Fix It
+      </button>
+    `;
+    // Backdrop
+    const bd = document.createElement('div');
+    bd.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;backdrop-filter:blur(4px);';
+    bd.onclick = () => { box.remove(); bd.remove(); };
+    document.body.appendChild(bd);
+    document.body.appendChild(box);
+  }
+</script>
+{% endblock %}

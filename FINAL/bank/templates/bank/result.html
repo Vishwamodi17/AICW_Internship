@@ -1,0 +1,349 @@
+{% extends 'bank/base.html' %}
+{% block title %}Loan Decision – LoanAI{% endblock %}
+{% block page_title %}Loan Decision{% endblock %}
+
+{% block extra_css %}
+<style>
+  .result-hero {
+    border-radius: var(--radius-lg); padding: 36px;
+    text-align: center; position: relative; overflow: hidden;
+    animation: popIn .5s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes popIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+  .result-approved {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 2px solid rgba(22,163,74,.3);
+  }
+  [data-theme="dark"] .result-approved {
+    background: linear-gradient(135deg, rgba(22,163,74,.1), rgba(22,163,74,.05));
+  }
+  .result-rejected {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border: 2px solid rgba(220,38,38,.3);
+  }
+  [data-theme="dark"] .result-rejected {
+    background: linear-gradient(135deg, rgba(220,38,38,.1), rgba(220,38,38,.05));
+  }
+  .result-icon-wrap {
+    width: 80px; height: 80px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin: 0 auto 16px;
+  }
+  .result-title { font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; }
+  .result-sub { font-size: .95rem; opacity: .8; }
+
+  /* Reason cards */
+  .reason-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    animation: slideIn .4s ease both;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+  .reason-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .reason-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .r-pos { background: var(--success-light); color: var(--success); }
+  .r-neg { background: var(--danger-light);  color: var(--danger); }
+  .r-neu { background: var(--warning-light); color: var(--warning); }
+  .impact-tag {
+    font-size: .62rem; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: .5px;
+    margin-left: 6px; vertical-align: middle;
+  }
+  .imp-High   { background: var(--danger-light);  color: var(--danger); }
+  .imp-Medium { background: var(--warning-light); color: var(--warning); }
+  .imp-Low    { background: var(--success-light); color: var(--success); }
+
+  /* EMI box */
+  .emi-box {
+    background: linear-gradient(135deg, var(--primary-light), rgba(124,58,237,.06));
+    border: 1px solid rgba(37,99,235,.2); border-radius: var(--radius);
+    padding: 24px;
+  }
+  .emi-value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+
+  /* Receipt */
+  .receipt-card {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 28px; position: relative;
+  }
+  .receipt-stamp {
+    position: absolute; top: 20px; right: 20px;
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; font-size: .5rem; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase; border: 3px solid;
+    opacity: .8;
+  }
+  .receipt-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: .85rem;
+  }
+  .receipt-row:last-child { border-bottom: none; }
+  .receipt-key { color: var(--text-3); font-weight: 500; }
+  .receipt-val { font-weight: 600; color: var(--text); }
+
+  /* What-if */
+  .whatif-slider { width: 100%; accent-color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Left Column -->
+  <div class="col-lg-7">
+
+    <!-- Card 1: Result -->
+    <div class="result-hero {% if result.result == 'Approved' %}result-approved{% else %}result-rejected{% endif %} mb-4">
+      <div class="result-icon-wrap" style="background:{% if result.result == 'Approved' %}rgba(22,163,74,.15){% else %}rgba(220,38,38,.15){% endif %};">
+        <i class="fa-solid {% if result.result == 'Approved' %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"
+           style="color:{% if result.result == 'Approved' %}var(--success){% else %}var(--danger){% endif %};"></i>
+      </div>
+      <div class="result-title" style="color:{% if result.result == 'Approved' %}var(--success){% else %}var(--danger){% endif %};">
+        Loan {{ result.result }}{% if result.result == 'Approved' %}!{% endif %}
+      </div>
+      <div class="result-sub" style="color:var(--text-2);">
+        {% if result.result == 'Approved' %}
+          Congratulations <strong>{{ applicant_name }}</strong>! Your {{ result.loan_type.label }} application is likely to be approved.
+        {% else %}
+          Sorry <strong>{{ applicant_name }}</strong>, your application doesn't meet the current criteria.
+        {% endif %}
+      </div>
+      <div style="margin-top:12px;font-size:.78rem;color:var(--text-3);">
+        <i class="fa-solid fa-microchip" style="margin-right:4px;"></i>
+        Model: <strong>{{ result.model_used }}</strong> &nbsp;·&nbsp;
+        <i class="fa-solid fa-tag" style="margin-right:4px;"></i>
+        {{ result.loan_type.label }}
+      </div>
+    </div>
+
+    <!-- Card 2: Probability -->
+    <div class="card-modern mb-4">
+      <div class="section-title" style="margin-bottom:20px;"><i class="fa-solid fa-chart-simple"></i> Approval Probability</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:.85rem;font-weight:600;color:var(--success);">
+          <i class="fa-solid fa-circle-check" style="margin-right:4px;"></i>Approval Chance
+        </span>
+        <span style="font-size:1.6rem;font-weight:800;color:var(--success);">{{ result.approved_prob }}%</span>
+      </div>
+      <div class="progress-modern" style="height:12px;margin-bottom:20px;">
+        <div class="progress-fill progress-fill-success" data-width="{{ result.approved_prob }}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:.85rem;font-weight:600;color:var(--danger);">
+          <i class="fa-solid fa-circle-xmark" style="margin-right:4px;"></i>Rejection Risk
+        </span>
+        <span style="font-size:1.6rem;font-weight:800;color:var(--danger);">{{ result.rejected_prob }}%</span>
+      </div>
+      <div class="progress-modern" style="height:12px;">
+        <div class="progress-fill progress-fill-danger" data-width="{{ result.rejected_prob }}"></div>
+      </div>
+    </div>
+
+    <!-- Card 3: EMI -->
+    <div class="emi-box mb-4">
+      <div class="section-title" style="margin-bottom:16px;"><i class="fa-solid fa-calculator"></i> EMI Breakdown · {{ result.emi_info.rate }}% p.a.</div>
+      <div class="row g-3 text-center">
+        <div class="col-4">
+          <div class="emi-value">₹{{ result.emi_info.monthly_emi|floatformat:0 }}</div>
+          <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">Monthly EMI</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.3rem;font-weight:700;color:#7c3aed;">₹{{ result.emi_info.total_payment|floatformat:0 }}</div>
+          <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">Total Payment</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.3rem;font-weight:700;color:var(--warning);">₹{{ result.emi_info.total_interest|floatformat:0 }}</div>
+          <div style="font-size:.72rem;color:var(--text-3);margin-top:2px;">Total Interest</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Key Factors -->
+    <div class="card-modern mb-4">
+      <div class="section-title" style="margin-bottom:4px;"><i class="fa-solid fa-magnifying-glass-chart"></i> Why Your Loan Was {{ result.result }}</div>
+      <p style="font-size:.82rem;color:var(--text-3);margin-bottom:16px;">
+        Key factors ranked by their impact on the AI model's decision.
+      </p>
+      {% for r in result.reasons %}
+      <div class="reason-item" style="animation-delay:{{ forloop.counter0 }}00ms;">
+        <div class="reason-icon r-{{ r.status|slice:':3' }}">
+          <i class="fa-solid {{ r.icon|default:'fa-circle' }}"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;">
+            {{ r.label }}
+            <span class="impact-tag imp-{{ r.impact }}">{{ r.impact }}</span>
+          </div>
+          <div style="font-size:.88rem;color:var(--text-2);margin-top:2px;">{{ r.detail }}</div>
+        </div>
+        <div style="flex-shrink:0;padding-top:2px;">
+          {% if r.status == 'positive' %}
+            <i class="fa-solid fa-circle-check" style="color:var(--success);font-size:1.1rem;"></i>
+          {% elif r.status == 'negative' %}
+            <i class="fa-solid fa-circle-xmark" style="color:var(--danger);font-size:1.1rem;"></i>
+          {% else %}
+            <i class="fa-solid fa-circle-minus" style="color:var(--warning);font-size:1.1rem;"></i>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Card 5: Suggestions -->
+    {% if result.result == 'Rejected' %}
+    <div class="card-modern mb-4" style="border-color:rgba(217,119,6,.2);">
+      <div class="section-title" style="margin-bottom:16px;color:var(--warning);"><i class="fa-solid fa-lightbulb"></i> Suggestions to Improve</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+          <i class="fa-solid fa-arrow-trend-up" style="color:var(--warning);margin-top:2px;flex-shrink:0;"></i>
+          <span style="font-size:.85rem;color:var(--text-2);">Increase your income or add a co-applicant to boost combined income</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+          <i class="fa-solid fa-arrow-trend-down" style="color:var(--warning);margin-top:2px;flex-shrink:0;"></i>
+          <span style="font-size:.85rem;color:var(--text-2);">Reduce the requested loan amount to lower your EMI burden</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+          <i class="fa-solid fa-shield-halved" style="color:var(--warning);margin-top:2px;flex-shrink:0;"></i>
+          <span style="font-size:.85rem;color:var(--text-2);">Maintain a good credit history — it's the single most important factor</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+          <i class="fa-solid fa-calendar-days" style="color:var(--warning);margin-top:2px;flex-shrink:0;"></i>
+          <span style="font-size:.85rem;color:var(--text-2);">Choose a longer repayment term to reduce monthly EMI pressure</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Card 6: What-If Analysis -->
+    <div class="card-modern mb-4 no-print">
+      <div class="section-title" style="margin-bottom:16px;"><i class="fa-solid fa-sliders"></i> What-If Analysis</div>
+      <p style="font-size:.82rem;color:var(--text-3);margin-bottom:20px;">
+        See how changing income or loan amount affects your approval probability.
+      </p>
+      <canvas id="whatifChart" height="120"></canvas>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;" class="no-print">
+      <a href="{% url 'bank_apply' %}" class="btn-primary-modern">
+        <i class="fa-solid fa-plus"></i> New Application
+      </a>
+      <button class="btn-outline-modern" onclick="window.print()">
+        <i class="fa-solid fa-print"></i> Print Receipt
+      </button>
+      <a href="{% url 'bank_dashboard' %}" class="btn-outline-modern">
+        <i class="fa-solid fa-gauge-high"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Right Column: Receipt -->
+  <div class="col-lg-5">
+    <div class="receipt-card">
+      <div class="receipt-stamp" style="border-color:{% if result.result == 'Approved' %}var(--success){% else %}var(--danger){% endif %};color:{% if result.result == 'Approved' %}var(--success){% else %}var(--danger){% endif %};">
+        <i class="fa-solid {% if result.result == 'Approved' %}fa-check{% else %}fa-xmark{% endif %}" style="font-size:1.3rem;"></i>
+        {{ result.result }}
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--primary),#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:.95rem;">LoanAI</div>
+          <div style="font-size:.68rem;color:var(--text-3);">Official Decision Receipt</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="receipt-row"><span class="receipt-key">Receipt ID</span><code style="font-size:.75rem;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:4px;">{{ receipt_id }}</code></div>
+      <div class="receipt-row"><span class="receipt-key">Date & Time</span><span class="receipt-val">{{ receipt_date }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Applicant</span><span class="receipt-val">{{ applicant_name }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Loan Type</span><span class="receipt-val">{{ result.loan_type.label }}</span></div>
+      <div class="receipt-row">
+        <span class="receipt-key">Decision</span>
+        <span style="font-weight:700;color:{% if result.result == 'Approved' %}var(--success){% else %}var(--danger){% endif %};">
+          {{ result.result }}
+        </span>
+      </div>
+      <div class="receipt-row"><span class="receipt-key">Approval Probability</span><span class="receipt-val">{{ result.approved_prob }}%</span></div>
+      <div class="receipt-row"><span class="receipt-key">Loan Amount</span><span class="receipt-val">₹{{ form_data.loan_amount }}K</span></div>
+      <div class="receipt-row"><span class="receipt-key">Loan Term</span><span class="receipt-val">{{ form_data.loan_amount_term }} months</span></div>
+      <div class="receipt-row"><span class="receipt-key">Interest Rate</span><span class="receipt-val">{{ result.emi_info.rate }}% p.a.</span></div>
+      <div class="receipt-row"><span class="receipt-key">Monthly EMI</span><span style="font-weight:700;color:var(--primary);">₹{{ result.emi_info.monthly_emi|floatformat:0 }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Total Payment</span><span class="receipt-val">₹{{ result.emi_info.total_payment|floatformat:0 }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Total Interest</span><span class="receipt-val">₹{{ result.emi_info.total_interest|floatformat:0 }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Applicant Income</span><span class="receipt-val">₹{{ form_data.applicant_income }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Credit History</span><span class="receipt-val">{% if form_data.credit_history == '1' %}Good{% else %}Poor{% endif %}</span></div>
+      <div class="receipt-row"><span class="receipt-key">Property Area</span><span class="receipt-val">{{ form_data.property_area }}</span></div>
+      <div class="receipt-row"><span class="receipt-key">AI Model Used</span><span class="receipt-val">{{ result.model_used }}</span></div>
+
+      <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);text-align:center;">
+        <div style="font-size:.68rem;color:var(--text-3);line-height:1.6;">
+          Computer-generated AI prediction. Not a legal document.<br>
+          LoanAI Simulation System © 2026
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // What-if chart
+  const scenarios = {{ scenarios|safe }};
+  const labels = scenarios.map(s => `₹${s.income.toLocaleString()}\n₹${s.loan}K`);
+  const probs  = scenarios.map(s => s.approved_prob);
+  const colors = scenarios.map(s =>
+    s.result === 'Approved' ? 'rgba(22,163,74,0.75)' : 'rgba(220,38,38,0.75)'
+  );
+
+  new Chart(document.getElementById('whatifChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Approval %',
+        data: probs,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const s = scenarios[items[0].dataIndex];
+              return [`Income: ₹${s.income.toLocaleString()}`, `Loan: ₹${s.loan}K`];
+            },
+            label: ctx => ` ${ctx.raw}% — ${scenarios[ctx.dataIndex].result}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { color: '#6b7280', font: { size: 9, family: 'Poppins' } }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { color: '#6b7280', font: { family: 'Poppins' } },
+          max: 100, min: 0
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

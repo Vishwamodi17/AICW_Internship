@@ -1,0 +1,239 @@
+{% extends 'bank/base.html' %}
+{% block title %}Dashboard – LoanAI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    border-radius: var(--radius); padding: 28px 32px;
+    color: #fff; margin-bottom: 28px; position: relative; overflow: hidden;
+  }
+  .welcome-banner::after {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.06); pointer-events: none;
+  }
+  .welcome-banner h4 { font-weight: 700; margin-bottom: 4px; }
+  .welcome-banner p { opacity: .85; font-size: .88rem; margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div>
+      <h4>Welcome back, {{ user.username }} 👋</h4>
+      <p>Here's an overview of your loan applications and financial activity.</p>
+    </div>
+    <a href="{% url 'bank_apply' %}" class="btn-primary-modern" style="background:rgba(255,255,255,.2);box-shadow:none;border:1.5px solid rgba(255,255,255,.4);">
+      <i class="fa-solid fa-plus"></i> New Application
+    </a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--primary-light);color:var(--primary);">
+        <i class="fa-solid fa-file-lines"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Total Applications</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--success-light);color:var(--success);">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="color:var(--success);">{{ approved }}</div>
+        <div class="stat-label">Approved</div>
+        <div class="stat-change" style="color:var(--success);">{{ approval_rate }}% rate</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--danger-light);color:var(--danger);">
+        <i class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="color:var(--danger);">{{ rejected }}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon-wrap" style="background:var(--warning-light);color:var(--warning);">
+        <i class="fa-solid fa-percent"></i>
+      </div>
+      <div>
+        <div class="stat-value" style="color:var(--warning);">{{ approval_rate }}%</div>
+        <div class="stat-label">Approval Rate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card-modern">
+      <div class="section-header">
+        <div class="section-title"><i class="fa-solid fa-chart-column"></i> Applications Over Time</div>
+      </div>
+      <canvas id="monthlyChart" height="90"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-modern">
+      <div class="section-header">
+        <div class="section-title"><i class="fa-solid fa-chart-pie"></i> Approval Split</div>
+      </div>
+      <canvas id="donutChart" height="180"></canvas>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:16px;">
+        <div style="text-align:center;">
+          <div style="font-size:1.3rem;font-weight:700;color:var(--success);">{{ approved }}</div>
+          <div style="font-size:.72rem;color:var(--text-3);">Approved</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:1.3rem;font-weight:700;color:var(--danger);">{{ rejected }}</div>
+          <div style="font-size:.72rem;color:var(--text-3);">Rejected</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Applications -->
+<div class="card-modern">
+  <div class="section-header">
+    <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Applications</div>
+    <a href="{% url 'bank_apply' %}" class="btn-primary-modern" style="padding:7px 16px;font-size:.78rem;">
+      <i class="fa-solid fa-plus"></i> Apply Now
+    </a>
+  </div>
+
+  {% if recent %}
+  <div style="overflow-x:auto;">
+    <table class="table-modern">
+      <thead>
+        <tr>
+          <th>Receipt ID</th>
+          <th>Loan Type</th>
+          <th>Amount</th>
+          <th>Monthly EMI</th>
+          <th>Probability</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in recent %}
+        <tr>
+          <td><code style="font-size:.75rem;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:4px;">{{ app.receipt_id }}</code></td>
+          <td style="font-weight:500;">{{ app.get_loan_type_display }}</td>
+          <td>₹{{ app.loan_amount }}K</td>
+          <td style="font-weight:600;color:var(--primary);">₹{{ app.monthly_emi|floatformat:0 }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="progress-modern" style="width:80px;">
+                <div class="progress-fill {% if app.result == 'Approved' %}progress-fill-success{% else %}progress-fill-danger{% endif %}"
+                     data-width="{{ app.approved_prob }}"></div>
+              </div>
+              <span style="font-size:.78rem;font-weight:600;">{{ app.approved_prob }}%</span>
+            </div>
+          </td>
+          <td>
+            {% if app.result == 'Approved' %}
+              <span class="badge-approved"><i class="fa-solid fa-check" style="margin-right:4px;"></i>Approved</span>
+            {% else %}
+              <span class="badge-rejected"><i class="fa-solid fa-xmark" style="margin-right:4px;"></i>Rejected</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text-3);font-size:.8rem;">{{ app.created_at|date:"d M Y" }}</td>
+          <td>
+            <a href="{% url 'bank_app_detail' app.pk %}" style="color:var(--primary);font-size:.8rem;font-weight:600;text-decoration:none;">
+              View <i class="fa-solid fa-arrow-right" style="font-size:.7rem;"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px 0;color:var(--text-3);">
+    <i class="fa-solid fa-inbox" style="font-size:2.5rem;opacity:.3;margin-bottom:12px;display:block;"></i>
+    <p style="margin:0;font-size:.9rem;">No applications yet.</p>
+    <a href="{% url 'bank_apply' %}" class="btn-primary-modern" style="margin-top:16px;padding:9px 22px;font-size:.85rem;">
+      <i class="fa-solid fa-plus"></i> Apply for your first loan
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = () => isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+const tickColor = () => isDark() ? '#94a3b8' : '#6b7280';
+
+const monthly = {{ monthly_json|safe }};
+const labels  = Object.keys(monthly);
+const values  = Object.values(monthly);
+
+const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Applications',
+      data: values,
+      backgroundColor: 'rgba(37,99,235,0.7)',
+      borderColor: '#2563EB',
+      borderWidth: 0,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: gridColor() }, ticks: { color: tickColor(), font: { family: 'Poppins' } } },
+      y: { grid: { color: gridColor() }, ticks: { color: tickColor(), stepSize: 1, font: { family: 'Poppins' } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Approved', 'Rejected'],
+    datasets: [{
+      data: [{{ approved }}, {{ rejected }}],
+      backgroundColor: ['rgba(22,163,74,0.85)', 'rgba(220,38,38,0.85)'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } }
+    }
+  }
+});
+</script>
+{% endblock %}
